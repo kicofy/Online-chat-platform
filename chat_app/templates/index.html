@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-base-200 flex items-center justify-center">
+    <!-- Theme toggle button -->
+    <div class="fixed top-4 right-4 animate__animated animate__fadeIn">
+        <button class="btn btn-circle" id="theme-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sun-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 moon-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="card w-96 bg-base-100 shadow-xl animate__animated animate__fadeInUp">
+        <div class="card-body">
+            <h2 class="card-title justify-center text-2xl font-bold mb-6 animate__animated animate__fadeIn">Welcome to Chat Room</h2>
+            <form action="{{ url_for('login') }}" method="POST" class="space-y-4">
+                <div class="form-control animate__animated animate__fadeIn" style="animation-delay: 0.2s">
+                    <label class="label">
+                        <span class="label-text">Nickname</span>
+                    </label>
+                    <input type="text" name="nickname" placeholder="Enter your nickname" 
+                           class="input input-bordered w-full transition-all duration-300 hover:shadow-md focus:shadow-lg" required>
+                </div>
+
+                <div class="card-actions justify-center mt-6 animate__animated animate__fadeIn" style="animation-delay: 0.6s">
+                    <button type="submit" class="btn btn-primary w-full transition-transform duration-300 hover:scale-105">
+                        Enter Chat Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .card {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .input {
+            transition: all 0.3s ease;
+        }
+
+        .input:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Theme toggle button animation */
+        #theme-toggle {
+            transition: transform 0.5s ease;
+        }
+
+        #theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        /* Dark mode icons */
+        [data-theme="dark"] .sun-icon {
+            display: none;
+        }
+
+        [data-theme="dark"] .moon-icon {
+            display: block;
+        }
+
+        [data-theme="light"] .sun-icon {
+            display: block;
+        }
+
+        [data-theme="light"] .moon-icon {
+            display: none;
+        }
+    </style>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        
+        // Get saved theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            // Add transition animation
+            document.body.style.transition = 'background-color 0.3s ease';
+            document.querySelectorAll('.card, .input, .btn')
+                .forEach(el => el.style.transition = 'all 0.3s ease');
+        });
+
+        // Form animation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', (e) => {
+            const card = document.querySelector('.card');
+            card.classList.remove('animate__fadeInUp');
+            card.classList.add('animate__fadeOutUp');
+        });
+
+        // Input animation
+        const inputs = document.querySelectorAll('.input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.classList.add('scale-105');
+            });
+            input.addEventListener('blur', () => {
+                input.classList.remove('scale-105');
+            });
+        });
+    </script>
+</body>
+</html> 

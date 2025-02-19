@@ -1,0 +1,55 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Welcome to Chat Room"
+msgstr "欢迎来到聊天室"
+
+msgid "Enter your nickname"
+msgstr "输入你的昵称"
+
+msgid "Language"
+msgstr "语言"
+
+msgid "Enter Chat Room"
+msgstr "进入聊天室"
+
+msgid "Contacts"
+msgstr "联系人"
+
+msgid "Groups"
+msgstr "群聊"
+
+msgid "Add contact by nickname"
+msgstr "通过昵称添加联系人"
+
+msgid "Create new group"
+msgstr "创建新群聊"
+
+msgid "Group Name"
+msgstr "群聊名称"
+
+msgid "Add Members"
+msgstr "添加成员"
+
+msgid "Create"
+msgstr "创建"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Type your message..."
+msgstr "输入消息..."
+
+msgid "Send"
+msgstr "发送"
+
+msgid "Select a chat to start messaging"
+msgstr "选择一个聊天开始对话"
+
+msgid "Online"
+msgstr "在线"
+
+msgid "Offline"
+msgstr "离线" 

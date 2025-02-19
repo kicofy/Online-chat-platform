@@ -1,0 +1,55 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Welcome to Chat Room"
+msgstr "Welcome to Chat Room"
+
+msgid "Enter your nickname"
+msgstr "Enter your nickname"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "Enter Chat Room"
+msgstr "Enter Chat Room"
+
+msgid "Contacts"
+msgstr "Contacts"
+
+msgid "Groups"
+msgstr "Groups"
+
+msgid "Add contact by nickname"
+msgstr "Add contact by nickname"
+
+msgid "Create new group"
+msgstr "Create new group"
+
+msgid "Group Name"
+msgstr "Group Name"
+
+msgid "Add Members"
+msgstr "Add Members"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Type your message..."
+msgstr "Type your message..."
+
+msgid "Send"
+msgstr "Send"
+
+msgid "Select a chat to start messaging"
+msgstr "Select a chat to start messaging"
+
+msgid "Online"
+msgstr "Online"
+
+msgid "Offline"
+msgstr "Offline" 

@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Chat Room</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js'
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/css/emojimart.css">
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-base-200 overflow-hidden">
+    <div class="drawer lg:drawer-open h-[100dvh]">
+        <input id="chat-drawer" type="checkbox" class="drawer-toggle">
+        
+        <div class="drawer-content flex flex-col h-full">
+            <!-- 顶部导航栏 -->
+            <div class="navbar bg-base-100 lg:hidden animate__animated animate__fadeIn">
+                <div class="flex-none">
+                    <label for="chat-drawer" class="btn btn-square btn-ghost drawer-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <span class="text-xl font-bold" id="current-chat-title">Chat Room</span>
+                </div>
+                <div class="flex-none">
+                    <button class="btn btn-square btn-ghost" id="theme-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sun-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 moon-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 欢迎界面 -->
+            <div class="flex-1 p-4 flex items-center justify-center bg-base-100 rounded-lg shadow-xl m-2" id="welcome-container">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold mb-4">Welcome, {{ nickname }}!</h1>
+                    <p class="text-lg">Select a contact or group to start chatting</p>
+                </div>
+            </div>
+
+            <!-- 聊天区域 -->
+            <div class="hidden flex-1" id="chat-container">
+                <div class="flex flex-col h-full bg-base-100 rounded-lg shadow-xl">
+                    <!-- 聊天记录 -->
+                    <div class="flex-1 p-4 overflow-y-auto min-h-0" id="messages">
+                        <!-- 消息将在这里动态添加 -->
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="p-2 border-t bg-base-100" id="input-area" style="display: none;">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-2">
+                                <button class="btn btn-circle btn-sm" id="emoji-button">😊</button>
+                                <button class="btn btn-circle btn-sm" id="file-button">📎</button>
+                                <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx">
+                            </div>
+                            <div class="flex flex-1 gap-2">
+                                <input type="text" id="message-input" 
+                                       class="input input-bordered input-sm flex-1 h-8" 
+                                       placeholder="Type a message...">
+                                <button class="btn btn-primary btn-sm h-8 min-h-0" id="send-button">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="drawer-side z-50">
+            <label for="chat-drawer" class="drawer-overlay"></label>
+            <div class="w-80 h-[100dvh] bg-base-100 animate__animated animate__slideInLeft">
+                <!-- 用户信息 -->
+                <div class="p-4 border-b">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
+                                    <span>{{ nickname[0].upper() }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold">{{ nickname }}</h2>
+                                <p class="text-sm opacity-70">Online</p>
+                            </div>
+                        </div>
+                        <!-- 桌面端主题切换按钮 -->
+                        <button class="btn btn-circle btn-ghost hidden lg:flex" id="theme-toggle-desktop">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sun-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 moon-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 标签页 -->
+                <div class="tabs tabs-boxed m-4">
+                    <a class="tab flex-1 tab-active" data-tab="contacts">Contacts</a>
+                    <a class="tab flex-1" data-tab="groups">Groups</a>
+                </div>
+
+                <!-- 联系人列表 -->
+                <div class="p-4 overflow-y-auto max-h-[calc(100vh-200px)]" id="contacts-container">
+                    <div class="form-control mb-4">
+                        <div class="input-group">
+                            <input type="text" id="new-contact" 
+                                   placeholder="Add contact by nickname" 
+                                   class="input input-bordered flex-1">
+                            <button class="btn btn-square" id="add-contact">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <ul class="menu bg-base-200 rounded-box" id="contacts-list">
+                        <!-- 移除静态联系人列表 -->
+                    </ul>
+                </div>
+
+                <!-- 群聊列表 -->
+                <div class="p-4 hidden overflow-y-auto max-h-[calc(100vh-200px)]" id="groups-container">
+                    <div class="form-control mb-4">
+                        <div class="input-group">
+                            <input type="text" id="new-group" 
+                                   placeholder="Create new group" 
+                                   class="input input-bordered flex-1">
+                            <button class="btn btn-square" id="create-group">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <ul class="menu bg-base-200 rounded-box" id="groups-list">
+                        {% for group_name, group_data in group_chats.items() %}
+                            {% if nickname in group_data.members %}
+                            <li class="animate__animated animate__fadeIn">
+                                <a class="group-item" data-group="{{ group_name }}">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                            <span>{{ group_name[0].upper() }}</span>
+                                        </div>
+                                    </div>
+                                    <span>{{ group_name }}</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker -->
+    <div id="emoji-picker" class="hidden fixed z-[9999] animate__animated animate__fadeIn bg-base-100 rounded-lg shadow-xl" style="transform-origin: bottom left;">
+        <emoji-picker></emoji-picker>
+    </div>
+
+    <!-- 创建群聊模态框 -->
+    <dialog id="create-group-modal" class="modal">
+        <form method="dialog" class="modal-box animate__animated animate__zoomIn">
+            <h3 class="font-bold text-lg mb-4">Create New Group</h3>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Group Name</span>
+                </label>
+                <input type="text" id="group-name-input" class="input input-bordered" required>
+            </div>
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Add Members (comma separated nicknames)</span>
+                </label>
+                <input type="text" id="group-members-input" class="input input-bordered">
+            </div>
+            <div class="modal-action">
+                <button class="btn">Cancel</button>
+                <button class="btn btn-primary" id="confirm-create-group">Create</button>
+            </div>
+        </form>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <style>
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        /* 移动端触摸滚动优化 */
+        @supports (-webkit-touch-callout: none) {
+            .overflow-y-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* 状态点样式 */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 重新设计 Emoji picker 样式 */
+        #emoji-picker {
+            position: fixed;
+            bottom: 80px;
+            left: 16px;
+            z-index: 9999;
+            transform-origin: bottom left;
+            background: var(--b1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        #emoji-picker emoji-picker {
+            --background: var(--b1);
+            --border-color: var(--border-color);
+            --indicator-color: var(--p);
+            --input-border-color: var(--border-color);
+            --input-font-color: var(--bc);
+            --input-placeholder-color: var(--bc);
+            --category-font-color: var(--bc);
+            --hover-background: var(--b2);
+            --button-hover-background: var(--b3);
+            --button-active-background: var(--p);
+            --category-emoji-padding: 0.25rem;
+            --category-emoji-size: 1.5rem;
+            --category-navigation-button-size: 2rem;
+            --font-family: system-ui, -apple-system, "Segoe UI", Roboto;
+            --font-size: 0.875rem;
+            --num-columns: 7;
+            --outline-color: var(--p);
+            height: 300px;
+            width: 320px;
+        }
+
+        [data-theme="dark"] #emoji-picker emoji-picker {
+            --background: var(--b1);
+            --border-color: var(--b3);
+            --category-font-color: var(--bc);
+            --indicator-color: var(--p);
+            --input-border-color: var(--b3);
+            --input-font-color: var(--bc);
+            --input-placeholder-color: var(--bc);
+            --hover-background: var(--b2);
+            --button-hover-background: var(--b3);
+            --button-active-background: var(--p);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            #emoji-picker {
+                bottom: 140px;
+                left: 50%;
+                transform: translateX(-50%);
+                transform-origin: bottom center;
+            }
+            
+            #emoji-picker emoji-picker {
+                height: 280px;
+                width: 300px;
+                --category-emoji-size: 1.25rem;
+                --num-columns: 6;
+            }
+        }
+
+        /* 添加箭头指示器 */
+        #emoji-picker::before {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 24px;
+            width: 16px;
+            height: 16px;
+            background: var(--b1);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            transform: rotate(45deg);
+        }
+
+        @media (max-width: 768px) {
+            #emoji-picker::before {
+                left: 50%;
+                margin-left: -8px;
+            }
+        }
+
+        /* 确保聊天区域可以接收点击事件 */
+        .drawer-content {
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        /* 确保侧边栏可以接收点击事件 */
+        .drawer-side {
+            pointer-events: auto;
+        }
+
+        /* 确保模态框在最顶层 */
+        .modal {
+            z-index: 10000;
+        }
+
+        /* 消息气泡样式 */
+        .chat-bubble {
+            position: relative;
+            margin-top: 0.5rem;  /* 减小顶部间距 */
+        }
+
+        /* 消息操作菜单样式 */
+        .message-menu {
+            position: absolute;
+            top: -3rem;
+            right: 0;
+            background: rgba(var(--b1), 0.6);  /* 降低背景不透明度 */
+            border: 1px solid rgba(var(--b3), 0.3);  /* 半透明边框 */
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 50;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);  /* Safari 支持 */
+        }
+
+        /* 确保在深色模式下菜单仍然清晰可见 */
+        [data-theme="dark"] .message-menu {
+            background: rgba(var(--b1), 0.7);  /* 深色模式下稍微提高不透明度 */
+            border-color: rgba(var(--b3), 0.4);
+        }
+
+        .chat-start .message-menu {
+            right: auto;
+            left: 0;
+        }
+
+        .chat-bubble:hover .message-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* 修改聊天消息的间距 */
+        .chat {
+            margin-bottom: 0.5rem;  /* 减小消息之间的间距 */
+        }
+
+        .chat-header {
+            margin-bottom: 0.25rem;  /* 减小发送者名称和消息之间的间距 */
+            line-height: 1.2;  /* 减小行高 */
+        }
+
+        /* 消息菜单按钮样式优化 */
+        .message-menu button {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.875rem;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            background: rgba(var(--b2), 0.8);  /* 半透明背景 */
+            color: var(--bc);
+            border: none;
+            min-width: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .message-menu button:hover {
+            transform: scale(1.05);
+            background: rgba(var(--b3), 0.9);  /* 悬停时增加不透明度 */
+        }
+
+        .message-menu button.btn-recall {
+            background: rgba(var(--er), 0.8);
+            color: white;
+        }
+
+        .message-menu button.btn-reply {
+            background: rgba(var(--in), 0.8);
+            color: white;
+        }
+
+        .message-menu button.btn-reaction {
+            background: rgba(var(--wa), 0.8);
+            color: white;
+        }
+
+        .message-menu button.btn-recall:hover {
+            background: rgba(var(--er), 0.9);
+        }
+
+        .message-menu button.btn-reply:hover {
+            background: rgba(var(--in), 0.9);
+        }
+
+        .message-menu button.btn-reaction:hover {
+            background: rgba(var(--wa), 0.9);
+        }
+
+        /* 回复预览样式 */
+        #reply-preview {
+            background: var(--b2);
+            border-left: 4px solid var(--in);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            animation: slideDown 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        #reply-preview .reply-content {
+            flex: 1;
+            min-width: 0;
+            padding-right: 1rem;
+        }
+
+        #reply-preview .reply-sender {
+            font-weight: 600;
+            color: var(--in);
+            margin-bottom: 0.25rem;
+        }
+
+        #reply-preview .reply-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        #reply-preview .close-button {
+            padding: 0.25rem;
+            border-radius: 50%;
+            opacity: 0.7;
+            transition: all 0.2s ease;
+            background: var(--b3);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #reply-preview .close-button:hover {
+            opacity: 1;
+            background: var(--b4);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .chat-bubble img {
+                max-width: 150px;
+            }
+
+            .input {
+                font-size: 16px; /* 防止iOS自动缩放 */
+            }
+
+            .drawer-side {
+                transition: transform 0.3s ease-in-out;
+            }
+        }
+
+        /* 深色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            [data-theme="light"] {
+                color-scheme: dark;
+            }
+        }
+
+        /* 安全区域适配 */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .drawer-content {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        /* 主题切换相关样式 */
+        [data-theme="dark"] .sun-icon {
+            display: none;
+        }
+
+        [data-theme="dark"] .moon-icon {
+            display: block;
+        }
+
+        [data-theme="light"] .sun-icon {
+            display: block;
+        }
+
+        [data-theme="light"] .moon-icon {
+            display: none;
+        }
+
+        /* 主题切换过渡动画 */
+        body, .drawer-content, .drawer-side, .chat-bubble, .input, .btn {
+            transition: all 0.3s ease;
+        }
+
+        #theme-toggle {
+            transition: transform 0.5s ease;
+        }
+
+        #theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        /* 深色模式优化 */
+        [data-theme="dark"] {
+            color-scheme: dark;
+        }
+
+        [data-theme="dark"] .chat-bubble img {
+            filter: brightness(0.9);
+        }
+
+        /* 主题切换时的过渡效果 */
+        .theme-transition {
+            transition: background-color 0.3s ease,
+                        color 0.3s ease,
+                        border-color 0.3s ease,
+                        box-shadow 0.3s ease;
+        }
+
+        /* 表情选择器样式 */
+        #reaction-picker {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        #reaction-picker button {
+            transition: transform 0.2s ease;
+        }
+
+        #reaction-picker button:hover {
+            transform: scale(1.2);
+        }
+
+        /* 表情回应样式 */
+        .reaction-badge {
+            transition: all 0.2s ease;
+        }
+
+        .reaction-badge:hover {
+            transform: scale(1.1);
+            background-color: var(--b2);
+        }
+
+        /* 聊天容器样式 */
+        .drawer-content {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            padding: 0.5rem;
+        }
+
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #chat-container.hidden {
+            display: none !important;
+        }
+
+        #welcome-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #welcome-container.hidden {
+            display: none !important;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+            scroll-behavior: smooth;
+            min-height: 0;
+            padding-bottom: 0.5rem;
+        }
+
+        #input-area {
+            border-top: 1px solid var(--border-color);
+            background: var(--b1);
+            z-index: 10;
+        }
+
+        #input-area .btn-sm {
+            @apply h-8 min-h-0 px-3;
+        }
+
+        #input-area .input-sm {
+            @apply h-8 min-h-0;
+        }
+
+        @media (max-width: 768px) {
+            #chat-container {
+                height: calc(100vh - var(--navbar-height, 4rem) - env(safe-area-inset-bottom, 0px));
+            }
+            
+            #messages {
+                max-height: calc(100vh - 120px);
+            }
+            
+            #input-area {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+        }
+    </style>
+
+    <script>
+        // 当前聊天的信息
+        let currentChat = {
+            type: null, // 'private' 或 'group'
+            target: null
+        };
+
+        // Socket.io 连接
+        const socket = io();
+        const nickname = "{{ nickname }}";
+
+        // DOM 元素
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const contactsList = document.getElementById('contacts-list');
+        const groupsList = document.getElementById('groups-list');
+        const chatContainer = document.getElementById('chat-container');
+        const welcomeContainer = document.getElementById('welcome-container');
+        const currentChatTitle = document.getElementById('current-chat-title');
+        const emojiButton = document.getElementById('emoji-button');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const fileButton = document.getElementById('file-button');
+        const fileInput = document.getElementById('file-input');
+        const createGroupModal = document.getElementById('create-group-modal');
+
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
+                tab.classList.add('tab-active');
+                
+                const tabName = tab.getAttribute('data-tab');
+                document.getElementById('contacts-container').classList.toggle('hidden', tabName !== 'contacts');
+                document.getElementById('groups-container').classList.toggle('hidden', tabName !== 'groups');
+            });
+        });
+
+        // Emoji picker 相关代码
+        function setupEmojiPicker() {
+            const emojiButton = document.getElementById('emoji-button');
+            const emojiPicker = document.getElementById('emoji-picker');
+            const messageInput = document.getElementById('message-input');
+            const picker = emojiPicker.querySelector('emoji-picker');
+
+            if (!emojiButton || !emojiPicker || !messageInput || !picker) {
+                console.error('Emoji picker elements not found');
+                return;
+            }
+
+            // 初始化 emoji-picker
+            customElements.whenDefined('emoji-picker').then(() => {
+                // 点击 emoji 按钮显示/隐藏选择器
+                emojiButton.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const isHidden = emojiPicker.classList.contains('hidden');
+                    if (isHidden) {
+                        // 计算位置
+                        const buttonRect = emojiButton.getBoundingClientRect();
+                        if (window.innerWidth > 768) {
+                            // 桌面端：显示在按钮上方
+                            emojiPicker.style.left = `${buttonRect.left}px`;
+                        } else {
+                            // 移动端：居中显示
+                            emojiPicker.style.left = '50%';
+                            emojiPicker.style.transform = 'translateX(-50%)';
+                        }
+                        
+                        emojiPicker.classList.remove('hidden');
+                        // 添加动画
+                        emojiPicker.classList.remove('animate__fadeOut');
+                        emojiPicker.classList.add('animate__fadeIn');
+                        
+                        // 设置主题
+                        const currentTheme = document.documentElement.getAttribute('data-theme');
+                        picker.classList.toggle('dark', currentTheme === 'dark');
+                    } else {
+                        // 添加淡出动画
+                        emojiPicker.classList.remove('animate__fadeIn');
+                        emojiPicker.classList.add('animate__fadeOut');
+                        setTimeout(() => {
+                            emojiPicker.classList.add('hidden');
+                        }, 300);
+                    }
+                };
+
+                // 选择表情后插入到输入框
+                picker.addEventListener('emoji-click', event => {
+                    const cursor = messageInput.selectionStart;
+                    const text = messageInput.value;
+                    const emoji = event.detail.unicode;
+                    
+                    messageInput.value = text.slice(0, cursor) + emoji + text.slice(cursor);
+                    messageInput.selectionStart = messageInput.selectionEnd = cursor + emoji.length;
+                    messageInput.focus();
+                    
+                    // 添加淡出动画
+                    emojiPicker.classList.remove('animate__fadeIn');
+                    emojiPicker.classList.add('animate__fadeOut');
+                    setTimeout(() => {
+                        emojiPicker.classList.add('hidden');
+                    }, 300);
+                });
+            });
+
+            // 点击其他地方关闭 emoji picker
+            document.addEventListener('click', (e) => {
+                if (!emojiPicker.contains(e.target) && !emojiButton.contains(e.target)) {
+                    emojiPicker.classList.remove('animate__fadeIn');
+                    emojiPicker.classList.add('animate__fadeOut');
+                    setTimeout(() => {
+                        emojiPicker.classList.add('hidden');
+                    }, 300);
+                }
+            });
+
+            // 阻止 emoji-picker 的点击事件冒泡
+            emojiPicker.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // 监听窗口大小变化，调整位置
+            window.addEventListener('resize', () => {
+                if (!emojiPicker.classList.contains('hidden')) {
+                    const buttonRect = emojiButton.getBoundingClientRect();
+                    if (window.innerWidth > 768) {
+                        emojiPicker.style.left = `${buttonRect.left}px`;
+                        emojiPicker.style.transform = 'none';
+                    } else {
+                        emojiPicker.style.left = '50%';
+                        emojiPicker.style.transform = 'translateX(-50%)';
+                    }
+                }
+            });
+        }
+
+        // 文件上传
+        fileButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    const fileUrl = result.url;
+                    const isImage = file.type.startsWith('image/');
+                    
+                    let message;
+                    if (isImage) {
+                        message = `<img src="${fileUrl}" class="max-w-xs rounded">`;
+                    } else {
+                        message = `<a href="${fileUrl}" class="link" target="_blank">${file.name}</a>`;
+                    }
+
+                    sendMessage(message);
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        });
+
+        // 创建群聊
+        document.getElementById('create-group').addEventListener('click', () => {
+            createGroupModal.showModal();
+        });
+
+        document.getElementById('confirm-create-group').addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const groupName = document.getElementById('group-name-input').value;
+            const membersInput = document.getElementById('group-members-input').value;
+            const members = membersInput.split(',').map(m => m.trim()).filter(m => m);
+
+            try {
+                const response = await fetch('/create_group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_name: groupName,
+                        members: members
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // 添加新群聊到列表
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a class="group-item" data-group="${groupName}">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                    <span>${groupName[0].toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <span>${groupName}</span>
+                        </a>
+                    `;
+                    groupsList.appendChild(li);
+                    createGroupModal.close();
+                }
+            } catch (error) {
+                console.error('Error creating group:', error);
+            }
+        });
+
+        // 发送消息
+        function sendMessage(content) {
+            if (!currentChat.target || !content) return;
+
+            const replyTo = messageInput.getAttribute('data-reply-to');
+            const timestamp = new Date().toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(/\//g, '-');
+            
+            // 创建消息对象
+            const messageData = {
+                sender: nickname,
+                content: content,
+                timestamp: timestamp,
+                reply_to: replyTo,
+                reactions: {},
+                is_recalled: false
+            };
+            
+            if (currentChat.type === 'private') {
+                socket.emit('private_message', {
+                    recipient: currentChat.target,
+                    message: content,
+                    reply_to: replyTo
+                });
+            } else if (currentChat.type === 'group') {
+                socket.emit('group_message', {
+                    group: currentChat.target,
+                    message: content,
+                    reply_to: replyTo
+                });
+            }
+
+            // 立即在本地添加消息
+            addMessage(messageData);
+            
+            // 清空输入框和回复状态
+            messageInput.value = '';
+            cancelReply();
+            
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        sendButton.addEventListener('click', () => {
+            sendMessage(messageInput.value);
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage(messageInput.value);
+            }
+        });
+
+        // 切换聊天
+        function switchChat(type, target) {
+            currentChat.type = type;
+            currentChat.target = target;
+            
+            // 显示并启用输入区域
+            const inputArea = document.getElementById('input-area');
+            inputArea.style.display = 'block';  // 使用 style.display 而不是 classList
+            messageInput.disabled = false;
+            emojiButton.disabled = false;
+            fileButton.disabled = false;
+            sendButton.disabled = false;
+            
+            // 隐藏欢迎界面，显示聊天界面
+            welcomeContainer.classList.add('hidden');
+            chatContainer.classList.remove('hidden');
+            currentChatTitle.textContent = target;
+            
+            // 清空消息容器
+            while (messagesContainer.firstChild) {
+                messagesContainer.removeChild(messagesContainer.firstChild);
+            }
+            
+            // 加载历史消息
+            loadChatHistory(type, target);
+        }
+
+        // 加载聊天历史
+        async function loadChatHistory(type, target) {
+            try {
+                const response = await fetch('/get_chat_history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: type,
+                        target: target
+                    })
+                });
+
+                const result = await response.json();
+                if (result.messages) {
+                    // 只清空消息容器的内容
+                    while (messagesContainer.firstChild) {
+                        messagesContainer.removeChild(messagesContainer.firstChild);
+                    }
+                    
+                    // 添加消息
+                    result.messages.forEach(message => {
+                        addMessage(message);
+                    });
+                    
+                    // 确保滚动到底部
+                    setTimeout(() => {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+            }
+        }
+
+        // 添加消息到聊天窗口
+        function addMessage(message) {
+            if (message.is_recalled) {
+                message.content = '<span class="opacity-50">Message has been recalled</span>';
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat ${message.sender === nickname ? 'chat-end' : 'chat-start'} mb-4 animate__animated animate__fadeIn`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `chat-bubble ${message.sender === nickname ? 'chat-bubble-primary' : ''} relative group`;
+            bubbleDiv.setAttribute('data-message-id', message.timestamp);
+            
+            // 如果是回复消息，添加回复预览
+            if (message.reply_to) {
+                const replyPreview = document.createElement('div');
+                replyPreview.className = 'bg-base-200 rounded p-2 mb-2 text-sm';
+                // 查找原始消息
+                const originalMessage = findMessageById(message.reply_to);
+                if (originalMessage) {
+                    replyPreview.innerHTML = `
+                        <div class="font-semibold text-info">Reply to ${originalMessage.sender}:</div>
+                        <div class="opacity-70">${originalMessage.content}</div>
+                    `;
+                    bubbleDiv.appendChild(replyPreview);
+                }
+            }
+            
+            // 添加消息内容
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            if (message.content.startsWith('<')) {
+                contentDiv.innerHTML = message.content;
+            } else {
+                contentDiv.textContent = message.content;
+            }
+            bubbleDiv.appendChild(contentDiv);
+
+            // 添加消息操作菜单
+            const menuDiv = document.createElement('div');
+            menuDiv.className = 'message-menu';
+            
+            // 只有自己发送的消息显示撤回按钮，且消息发送时间在2分钟内
+            if (message.sender === nickname && !message.is_recalled) {
+                const msgTime = new Date(message.timestamp);
+                const now = new Date();
+                if ((now - msgTime) / 1000 <= 120) {
+                    const recallBtn = document.createElement('button');
+                    recallBtn.className = 'btn-recall';
+                    recallBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Recall';
+                    recallBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        handleRecallMessage(message.timestamp);
+                    };
+                    menuDiv.appendChild(recallBtn);
+                }
+            }
+
+            if (!message.is_recalled) {
+                // 回复按钮
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'btn-reply';
+                replyBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>Reply';
+                replyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    handleReplyMessage(message);
+                };
+                menuDiv.appendChild(replyBtn);
+
+                // 表情回应按钮
+                const reactionBtn = document.createElement('button');
+                reactionBtn.className = 'btn-reaction';
+                reactionBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>React';
+                reactionBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    handleShowReactions(message.timestamp, bubbleDiv);
+                };
+                menuDiv.appendChild(reactionBtn);
+            }
+
+            bubbleDiv.appendChild(menuDiv);
+
+            // 修改表情回应显示区域的添加逻辑
+            if (message.reactions && Object.keys(message.reactions).length > 0) {
+                updateMessageReactions(bubbleDiv, message.reactions);
+            }
+
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'chat-header';
+            headerDiv.innerHTML = `
+                ${message.sender}
+                <time class="text-xs opacity-50">${message.timestamp}</time>
+            `;
+
+            messageDiv.appendChild(headerDiv);
+            messageDiv.appendChild(bubbleDiv);
+            
+            // 修改滚动逻辑
+            const shouldScroll = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
+            
+            messagesContainer.appendChild(messageDiv);
+            
+            // 只有在接近底部时才自动滚动
+            if (shouldScroll) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        // 查找消息的辅助函数
+        function findMessageById(timestamp) {
+            const messages = messagesContainer.querySelectorAll('.chat-bubble');
+            for (const msg of messages) {
+                if (msg.getAttribute('data-message-id') === timestamp) {
+                    return {
+                        sender: msg.closest('.chat').querySelector('.chat-header').textContent.trim().split('\n')[0],
+                        content: msg.querySelector('.message-content').innerHTML
+                    };
+                }
+            }
+            return null;
+        }
+
+        // 修改表情回应处理函数
+        function handleShowReactions(messageId, bubbleElement) {
+            // 移除现有的表情选择器
+            const existingPicker = document.getElementById('reaction-picker');
+            if (existingPicker) {
+                existingPicker.remove();
+            }
+
+            const reactionPicker = document.createElement('div');
+            reactionPicker.id = 'reaction-picker';
+            reactionPicker.className = 'absolute -top-12 left-0 bg-base-100 shadow-lg rounded-lg p-2 flex gap-2 z-50 animate__animated animate__fadeIn';
+            
+            const reactions = ['👍', '❤️', '😄', '😢', '😮', '👏', '🎉', '🚀'];
+            reactions.forEach(emoji => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-circle btn-ghost btn-sm';
+                button.textContent = emoji;
+                button.onclick = (e) => {
+                    e.stopPropagation();
+                    handleAddReaction(messageId, emoji);
+                    reactionPicker.remove();
+                };
+                reactionPicker.appendChild(button);
+            });
+            
+            bubbleElement.appendChild(reactionPicker);
+            
+            // 点击其他地方关闭表情选择器
+            const closeHandler = (e) => {
+                if (!reactionPicker.contains(e.target)) {
+                    reactionPicker.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            
+            // 延迟添加点击事件，防止立即触发
+            setTimeout(() => {
+                document.addEventListener('click', closeHandler);
+            }, 0);
+        }
+
+        // 修改事件监听器，确保菜单正确显示和隐藏
+        document.addEventListener('click', (e) => {
+            const bubble = e.target.closest('.chat-bubble');
+            const menu = e.target.closest('.message-menu');
+            const reactionPicker = e.target.closest('#reaction-picker');
+            
+            // 如果点击在气泡、菜单和表情选择器之外，只隐藏表情选择器
+            if (!bubble && !menu && !reactionPicker) {
+                const pickers = document.querySelectorAll('#reaction-picker');
+                pickers.forEach(picker => picker.remove());
+            }
+        });
+
+        // 添加消息撤回和表情回应的 Socket 事件监听
+        socket.on('new_private_message', (data) => {
+            if (currentChat.type === 'private' && 
+                (data.sender === currentChat.target || data.sender === nickname)) {
+                addMessage(data);
+            }
+            // 收到新消息后刷新联系人列表
+            loadActiveContacts();
+        });
+
+        socket.on('new_group_message', (data) => {
+            if (currentChat.type === 'group' && data.group === currentChat.target) {
+                addMessage(data.message);
+            }
+        });
+
+        socket.on('message_recalled', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (messageElement) {
+                messageElement.innerHTML = '<span class="opacity-50">Message has been recalled</span>';
+            }
+        });
+
+        // 修改 Socket.IO 事件监听器
+        socket.on('reaction_updated', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (messageElement) {
+                updateMessageReactions(messageElement, data.reactions);
+            }
+        });
+
+        // 添加长按支持
+        let pressTimer;
+        let touchStartX;
+        let touchStartY;
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.chat-bubble')) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                pressTimer = setTimeout(() => {
+                    const bubble = e.target.closest('.chat-bubble');
+                    const menuDiv = bubble.querySelector('div[class*="opacity-0"]');
+                    if (menuDiv) {
+                        menuDiv.classList.remove('opacity-0');
+                        menuDiv.classList.add('opacity-100');
+                    }
+                }, 500);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (pressTimer && e.target.closest('.chat-bubble')) {
+                const moveX = Math.abs(e.touches[0].clientX - touchStartX);
+                const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+                if (moveX > 10 || moveY > 10) {
+                    clearTimeout(pressTimer);
+                }
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        }, { passive: true });
+
+        // 添加右键菜单支持
+        document.addEventListener('contextmenu', (e) => {
+            const bubble = e.target.closest('.chat-bubble');
+            if (bubble) {
+                e.preventDefault();
+                const menuDiv = bubble.querySelector('div[class*="opacity-0"]');
+                if (menuDiv) {
+                    menuDiv.classList.remove('opacity-0');
+                    menuDiv.classList.add('opacity-100');
+                }
+            }
+        });
+
+        // 联系人点击事件
+        contactsList.addEventListener('click', (e) => {
+            const contactItem = e.target.closest('.contact-item');
+            if (contactItem) {
+                const nickname = contactItem.getAttribute('data-nickname');
+                switchChat('private', nickname);
+                // 在移动端自动关闭抽屉
+                if (window.innerWidth < 768) {
+                    document.getElementById('chat-drawer').checked = false;
+                }
+            }
+        });
+
+        // 群组点击事件
+        groupsList.addEventListener('click', (e) => {
+            const groupItem = e.target.closest('.group-item');
+            if (groupItem) {
+                const groupName = groupItem.getAttribute('data-group');
+                switchChat('group', groupName);
+                // 在移动端自动关闭抽屉
+                if (window.innerWidth < 768) {
+                    document.getElementById('chat-drawer').checked = false;
+                }
+            }
+        });
+
+        // 移动端触摸事件优化
+        document.addEventListener('touchstart', function() {}, {passive: true});
+
+        // 自动隐藏移动端导航栏
+        let lastScrollTop = 0;
+        messagesContainer.addEventListener('scroll', function() {
+            const st = messagesContainer.scrollTop;
+            if (st > lastScrollTop && window.innerWidth < 768) {
+                document.querySelector('.navbar').classList.add('animate__fadeOutUp');
+            } else {
+                document.querySelector('.navbar').classList.remove('animate__fadeOutUp');
+            }
+            lastScrollTop = st;
+        }, {passive: true});
+
+        // 移动端抽屉关闭优化
+        document.querySelector('.drawer-overlay').addEventListener('click', function() {
+            document.getElementById('chat-drawer').checked = false;
+        });
+
+        // 防止iOS键盘弹出时页面变形
+        messageInput.addEventListener('focus', () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 50);
+        });
+
+        // 优化图片加载
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                img.addEventListener('load', function() {
+                    this.classList.add('animate__fadeIn');
+                });
+            });
+        });
+
+        // 主题切换功能
+        function setupThemeToggle() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeToggleDesktop = document.getElementById('theme-toggle-desktop');
+            const html = document.documentElement;
+            
+            // 从 localStorage 获取保存的主题
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.setAttribute('data-theme', savedTheme);
+
+            function toggleTheme() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                // 添加过渡类
+                document.body.classList.add('theme-transition');
+                
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+
+                // 更新所有需要主题过渡的元素
+                const elements = document.querySelectorAll('.drawer-content, .drawer-side, .chat-bubble, .input, .btn');
+                elements.forEach(el => {
+                    el.classList.add('theme-transition');
+                    setTimeout(() => el.classList.remove('theme-transition'), 300);
+                });
+
+                // 更新 emoji-picker 主题
+                const picker = document.querySelector('emoji-picker');
+                if (picker) {
+                    picker.classList.toggle('light', newTheme === 'light');
+                    picker.classList.toggle('dark', newTheme === 'dark');
+                }
+
+                // 移除过渡类
+                setTimeout(() => {
+                    document.body.classList.remove('theme-transition');
+                }, 300);
+            }
+
+            // 移动端主题切换按钮
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // 桌面端主题切换按钮
+            themeToggleDesktop.addEventListener('click', toggleTheme);
+        }
+
+        // 确保在 DOM 完全加载后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化主题
+            setupThemeToggle();
+            
+            // 加载活跃联系人列表
+            loadActiveContacts();
+            
+            // 等待 emoji-picker 元素定义完成后再初始化
+            if (customElements.get('emoji-picker')) {
+                setupEmojiPicker();
+            } else {
+                customElements.whenDefined('emoji-picker').then(() => {
+                    setupEmojiPicker();
+                });
+            }
+            
+            // 从 localStorage 获取主题并应用
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // 添加联系人点击事件
+            contactsList.addEventListener('click', (e) => {
+                const contactItem = e.target.closest('.contact-item');
+                if (contactItem) {
+                    const nickname = contactItem.getAttribute('data-nickname');
+                    switchChat('private', nickname);
+                    // 在移动端自动关闭抽屉
+                    if (window.innerWidth < 768) {
+                        document.getElementById('chat-drawer').checked = false;
+                    }
+                }
+            });
+
+            // 添加群组点击事件
+            groupsList.addEventListener('click', (e) => {
+                const groupItem = e.target.closest('.group-item');
+                if (groupItem) {
+                    const groupName = groupItem.getAttribute('data-group');
+                    switchChat('group', groupName);
+                    // 在移动端自动关闭抽屉
+                    if (window.innerWidth < 768) {
+                        document.getElementById('chat-drawer').checked = false;
+                    }
+                }
+            });
+
+            // 在页面加载时禁用输入区域
+            messageInput.disabled = true;
+            emojiButton.disabled = true;
+            fileButton.disabled = true;
+            sendButton.disabled = true;
+            document.getElementById('input-area').style.display = 'none';  // 使用 style.display
+        });
+
+        // 处理回复消息
+        function handleReplyMessage(message) {
+            const replyPreview = document.createElement('div');
+            replyPreview.id = 'reply-preview';
+            replyPreview.innerHTML = `
+                <div class="reply-content">
+                    <div class="reply-sender">Reply to ${message.sender}:</div>
+                    <div class="reply-text">${message.content}</div>
+                </div>
+                <button class="close-button" onclick="cancelReply()">×</button>
+            `;
+            
+            const inputArea = document.getElementById('input-area');
+            if (inputArea.firstChild) {
+                inputArea.insertBefore(replyPreview, inputArea.firstChild);
+            } else {
+                inputArea.appendChild(replyPreview);
+            }
+            
+            messageInput.setAttribute('data-reply-to', message.timestamp);
+            messageInput.focus();
+        }
+
+        // 取消回复
+        function cancelReply() {
+            const replyPreview = document.getElementById('reply-preview');
+            if (replyPreview) {
+                replyPreview.remove();
+            }
+            messageInput.removeAttribute('data-reply-to');
+        }
+
+        // 处理表情回应
+        function handleAddReaction(messageId, emoji) {
+            // 获取当前消息元素
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageElement) return;
+
+            // 检查用户是否已经有表情回应
+            const reactions = messageElement.querySelectorAll('.reaction-badge');
+            let hasReacted = false;
+            let existingEmoji = null;
+
+            reactions.forEach(badge => {
+                const [emojiText] = badge.textContent.trim().split(' ');
+                const users = JSON.parse(badge.getAttribute('data-users') || '[]');
+                if (users.includes(nickname)) {
+                    hasReacted = true;
+                    existingEmoji = emojiText;
+                }
+            });
+
+            // 如果用户已经有表情回应
+            if (hasReacted) {
+                // 如果点击的是同一个表情，则取消回应
+                if (existingEmoji === emoji) {
+                    socket.emit('add_reaction', {
+                        message_id: messageId,
+                        type: currentChat.type,
+                        target: currentChat.target,
+                        emoji: emoji,
+                        action: 'remove'
+                    });
+                    return;
+                }
+                
+                // 如果是不同表情，先移除旧表情
+                socket.emit('add_reaction', {
+                    message_id: messageId,
+                    type: currentChat.type,
+                    target: currentChat.target,
+                    emoji: existingEmoji,
+                    action: 'remove'
+                });
+            }
+
+            // 添加新表情
+            socket.emit('add_reaction', {
+                message_id: messageId,
+                type: currentChat.type,
+                target: currentChat.target,
+                emoji: emoji,
+                action: 'add'
+            });
+        }
+
+        // 修改表情回应显示区域的创建逻辑
+        function updateMessageReactions(messageElement, reactions) {
+            // 移除现有的表情回应区域
+            const existingReactionsDiv = messageElement.querySelector('.reactions');
+            if (existingReactionsDiv) {
+                existingReactionsDiv.remove();
+            }
+
+            if (Object.keys(reactions).length > 0) {
+                const reactionsDiv = document.createElement('div');
+                reactionsDiv.className = 'reactions flex gap-1 mt-2';
+
+                for (const [emoji, users] of Object.entries(reactions)) {
+                    const reactionBadge = document.createElement('div');
+                    reactionBadge.className = 'badge badge-sm gap-1 cursor-pointer hover:bg-base-300';
+                    reactionBadge.innerHTML = `${emoji} ${users.length}`;
+                    reactionBadge.setAttribute('data-users', JSON.stringify(users));
+                    // 如果当前用户已经选择了这个表情，添加高亮效果
+                    if (users.includes(nickname)) {
+                        reactionBadge.classList.add('badge-primary');
+                    }
+                    reactionBadge.onclick = (e) => {
+                        e.stopPropagation();
+                        handleAddReaction(messageElement.getAttribute('data-message-id'), emoji);
+                    };
+                    reactionsDiv.appendChild(reactionBadge);
+                }
+                messageElement.appendChild(reactionsDiv);
+            }
+        }
+
+        // 处理消息撤回
+        function handleRecallMessage(messageId) {
+            if (currentChat.type === 'private') {
+                socket.emit('recall_message', {
+                    message_id: messageId,
+                    type: 'private',
+                    target: currentChat.target
+                });
+            } else if (currentChat.type === 'group') {
+                socket.emit('recall_message', {
+                    message_id: messageId,
+                    type: 'group',
+                    target: currentChat.target
+                });
+            }
+        }
+
+        // 添加加载活跃联系人的函数
+        async function loadActiveContacts() {
+            try {
+                const response = await fetch('/get_active_contacts');
+                const data = await response.json();
+                
+                const contactsList = document.getElementById('contacts-list');
+                contactsList.innerHTML = ''; // 清空现有列表
+                
+                data.contacts.forEach(user => {
+                    if (user !== nickname) {
+                        const li = document.createElement('li');
+                        li.className = 'animate__animated animate__fadeIn';
+                        li.innerHTML = `
+                            <a class="contact-item" data-nickname="${user}">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                        <span>${user[0].toUpperCase()}</span>
+                                    </div>
+                                </div>
+                                <span>${user}</span>
+                            </a>
+                        `;
+                        contactsList.appendChild(li);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading active contacts:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

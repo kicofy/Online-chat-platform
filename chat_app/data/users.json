@@ -1,0 +1,14 @@
+{
+  "charlie": {
+    "online": false,
+    "rooms": []
+  },
+  "harry": {
+    "online": false,
+    "rooms": []
+  },
+  "Harry": {
+    "online": false,
+    "rooms": []
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "Harry's Chating Group": {
+    "members": [
+      "harry",
+      "charlie"
+    ],
+    "messages": [
+      {
+        "sender": "charlie",
+        "content": "hello",
+        "timestamp": "2025-02-17 21:29:34"
+      },
+      {
+        "sender": "charlie",
+        "content": "are you online?",
+        "timestamp": "2025-02-17 21:31:17"
+      }
+    ]
+  }
+}
