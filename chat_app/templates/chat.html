@@ -45,15 +45,15 @@
             </div>
 
             <!-- 欢迎界面 -->
-            <div class="flex-1 p-4 flex items-center justify-center bg-base-100 rounded-lg shadow-xl m-2" id="welcome-container">
+            <div class="flex-1 flex items-center justify-center" id="welcome-container">
                 <div class="text-center">
-                    <h1 class="text-3xl font-bold mb-4">Welcome, {{ nickname }}!</h1>
-                    <p class="text-lg">Select a contact or group to start chatting</p>
+                    <h1 class="text-3xl font-bold mb-4">欢迎, {{ nickname }}!</h1>
+                    <p class="text-lg">选择一个联系人或群组开始聊天</p>
                 </div>
             </div>
 
             <!-- 聊天区域 -->
-            <div class="hidden flex-1" id="chat-container">
+            <div class="hidden" id="chat-container" style="display: none;">
                 <div class="flex flex-col h-full bg-base-100 rounded-lg shadow-xl">
                     <!-- 聊天记录 -->
                     <div class="flex-1 p-4 overflow-y-auto min-h-0" id="messages">
@@ -61,7 +61,7 @@
                     </div>
 
                     <!-- 输入区域 -->
-                    <div class="p-2 border-t bg-base-100" id="input-area" style="display: none;">
+                    <div class="p-2 border-t bg-base-100" id="input-area">
                         <div class="flex items-center gap-2">
                             <div class="flex gap-2">
                                 <button class="btn btn-circle btn-sm" id="emoji-button">😊</button>
@@ -69,10 +69,8 @@
                                 <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx">
                             </div>
                             <div class="flex flex-1 gap-2">
-                                <input type="text" id="message-input" 
-                                       class="input input-bordered input-sm flex-1 h-8" 
-                                       placeholder="Type a message...">
-                                <button class="btn btn-primary btn-sm h-8 min-h-0" id="send-button">Send</button>
+                                <input type="text" id="message-input" class="input input-bordered input-sm flex-1 h-8" placeholder="输入消息...">
+                                <button class="btn btn-primary btn-sm h-8 min-h-0" id="send-button">发送</button>
                             </div>
                         </div>
                     </div>
@@ -153,14 +151,22 @@
                         {% for group_name, group_data in group_chats.items() %}
                             {% if nickname in group_data.members %}
                             <li class="animate__animated animate__fadeIn">
-                                <a class="group-item" data-group="{{ group_name }}">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
-                                            <span>{{ group_name[0].upper() }}</span>
+                                <div class="flex items-center justify-between w-full px-4 py-2 hover:bg-base-300 rounded-lg">
+                                    <a class="group-item flex items-center gap-2" data-group="{{ group_name }}">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                                <span>{{ group_name[0].upper() }}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <span>{{ group_name }}</span>
-                                </a>
+                                        <span>{{ group_name }}</span>
+                                    </a>
+                                    <button class="btn btn-ghost btn-sm group-manage-btn" data-group="{{ group_name }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </li>
                             {% endif %}
                         {% endfor %}
@@ -183,21 +189,108 @@
                 <label class="label">
                     <span class="label-text">Group Name</span>
                 </label>
-                <input type="text" id="group-name-input" class="input input-bordered" required>
+                <input type="text" id="group-name-input" class="input input-bordered" placeholder="Enter group name">
             </div>
             <div class="form-control mt-4">
                 <label class="label">
                     <span class="label-text">Add Members (comma separated nicknames)</span>
                 </label>
-                <input type="text" id="group-members-input" class="input input-bordered">
+                <input type="text" id="group-members-input" class="input input-bordered" placeholder="Optional">
             </div>
             <div class="modal-action">
-                <button class="btn">Cancel</button>
+                <button class="btn" onclick="closeCreateGroupModal()">Cancel</button>
                 <button class="btn btn-primary" id="confirm-create-group">Create</button>
             </div>
         </form>
         <form method="dialog" class="modal-backdrop">
             <button>close</button>
+        </form>
+    </dialog>
+
+    <!-- 群组信息模态框 -->
+    <dialog id="group-info-modal" class="modal">
+        <div class="modal-box w-11/12 max-w-xl animate__animated animate__zoomIn">
+            <h3 class="font-bold text-xl mb-6">Group Information</h3>
+            <div class="space-y-6">
+                <!-- Group Name -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-base">Group Name</span>
+                        <button class="btn btn-ghost btn-sm" id="save-group-name-btn" disabled>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save
+                        </button>
+                    </label>
+                    <input type="text" id="group-name-display" class="input input-bordered flex-1 h-10 min-h-[2.5rem] leading-normal py-2 px-4">
+                </div>
+
+                <!-- Group Announcement -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-base">Announcement</span>
+                        <button class="btn btn-ghost btn-sm" id="save-announcement-btn" disabled>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save
+                        </button>
+                    </label>
+                    <textarea id="group-announcement" class="textarea textarea-bordered flex-1 min-h-[100px]"></textarea>
+                </div>
+
+                <!-- Members List -->
+                <div class="form-control">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="label-text text-base">Members</span>
+                        <button class="btn btn-sm btn-primary inline-flex items-center gap-2 whitespace-nowrap" onclick="showAddMemberModal()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Member
+                        </button>
+                    </div>
+                    <div class="bg-base-200 rounded-lg p-4 max-h-[40vh] overflow-y-auto">
+                        <ul class="space-y-2" id="group-members-list">
+                            <!-- Members will be added dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-action mt-6">
+                <form method="dialog">
+                    <button class="btn">Close</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Close</button>
+        </form>
+    </dialog>
+
+    <!-- Add Member Modal -->
+    <dialog id="add-member-modal" class="modal">
+        <div class="modal-box animate__animated animate__zoomIn">
+            <h3 class="font-bold text-lg mb-4">Add New Members</h3>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Search Users</span>
+                </label>
+                <input type="text" id="member-search" class="input input-bordered" placeholder="Type to search...">
+            </div>
+            <div class="mt-4 max-h-[40vh] overflow-y-auto">
+                <div id="member-search-results" class="space-y-2">
+                    <!-- Search results will be added here -->
+                </div>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-ghost" onclick="closeAddMemberModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmAddMembers()">Add Selected</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Close</button>
         </form>
     </dialog>
 
@@ -213,12 +306,12 @@
         }
         
         ::-webkit-scrollbar-thumb {
-            background: #888;
+            background: hsl(var(--bc) / 0.2);
             border-radius: 3px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: #666;
+            background: hsl(var(--bc) / 0.3);
         }
 
         /* 移动端触摸滚动优化 */
@@ -342,7 +435,47 @@
         /* 消息气泡样式 */
         .chat-bubble {
             position: relative;
-            margin-top: 0.5rem;  /* 减小顶部间距 */
+            min-height: 1.5rem;
+            padding-bottom: 0.5rem; /* 默认较小的底部间距 */
+            max-width: 80%;
+            width: max-content;
+        }
+
+        .chat-bubble.has-reactions {
+            padding-bottom: 1.5rem; /* 只有在有表情回应时才增加底部间距 */
+        }
+
+        /* 表情回应容器样式 */
+        .reactions-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            min-height: 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            padding: 0.25rem;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* 表情回应徽章样式 */
+        .reactions-container .badge {
+            margin-bottom: 0;
+            white-space: nowrap;
+            z-index: 1;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+            min-height: 1.25rem;
+            line-height: 1;
+        }
+
+        /* 确保消息内容区域样式正确 */
+        .message-content {
+            word-break: break-word; /* 允许长单词换行 */
+            overflow-wrap: break-word; /* 确保长内容可以换行 */
+            max-width: 100%; /* 限制最大宽度 */
         }
 
         /* 消息操作菜单样式 */
@@ -514,7 +647,7 @@
         /* 深色模式支持 */
         @media (prefers-color-scheme: dark) {
             [data-theme="light"] {
-                color-scheme: dark;
+                color-scheme: light;
             }
         }
 
@@ -543,15 +676,34 @@
         }
 
         /* 主题切换过渡动画 */
-        body, .drawer-content, .drawer-side, .chat-bubble, .input, .btn {
-            transition: all 0.3s ease;
+        :root {
+            --theme-transition-duration: 0.3s;
         }
 
-        #theme-toggle {
+        .theme-transition,
+        .theme-transition *,
+        .drawer-content,
+        .drawer-side,
+        .chat-bubble,
+        .input,
+        .btn,
+        .modal-box,
+        .textarea,
+        .navbar,
+        .menu {
+            transition: background-color var(--theme-transition-duration) ease,
+                      color var(--theme-transition-duration) ease,
+                      border-color var(--theme-transition-duration) ease,
+                      box-shadow var(--theme-transition-duration) ease !important;
+        }
+
+        #theme-toggle,
+        #theme-toggle-desktop {
             transition: transform 0.5s ease;
         }
 
-        #theme-toggle:hover {
+        #theme-toggle:hover,
+        #theme-toggle-desktop:hover {
             transform: rotate(180deg);
         }
 
@@ -560,108 +712,241 @@
             color-scheme: dark;
         }
 
-        [data-theme="dark"] .chat-bubble img {
-            filter: brightness(0.9);
+        [data-theme="dark"] .chat-bubble {
+            background-color: hsl(var(--b2));
         }
 
-        /* 主题切换时的过渡效果 */
-        .theme-transition {
-            transition: background-color 0.3s ease,
-                        color 0.3s ease,
-                        border-color 0.3s ease,
-                        box-shadow 0.3s ease;
+        [data-theme="dark"] .chat-bubble-primary {
+            background-color: hsl(var(--p));
+            color: hsl(var(--pc));
         }
 
-        /* 表情选择器样式 */
-        #reaction-picker {
-            animation: fadeIn 0.2s ease-in-out;
+        [data-theme="dark"] .input,
+        [data-theme="dark"] .textarea {
+            background-color: hsl(var(--b1));
+            border-color: hsl(var(--b3));
         }
 
-        #reaction-picker button {
-            transition: transform 0.2s ease;
+        [data-theme="dark"] .modal-box {
+            background-color: hsl(var(--b1));
+            border-color: hsl(var(--b3));
         }
 
-        #reaction-picker button:hover {
-            transform: scale(1.2);
+        [data-theme="dark"] .menu {
+            background-color: hsl(var(--b2));
         }
 
-        /* 表情回应样式 */
-        .reaction-badge {
-            transition: all 0.2s ease;
+        [data-theme="light"] {
+            color-scheme: light;
         }
 
-        .reaction-badge:hover {
-            transform: scale(1.1);
-            background-color: var(--b2);
+        [data-theme="light"] .chat-bubble {
+            background-color: hsl(var(--b2) / 0.8);
+            color: hsl(var(--bc) / 0.8);
         }
 
-        /* 聊天容器样式 */
+        [data-theme="light"] .chat-bubble-primary {
+            background-color: hsl(var(--p) / 0.8);
+            color: hsl(var(--pc));
+        }
+
+        [data-theme="light"] .input,
+        [data-theme="light"] .textarea {
+            background-color: hsl(var(--b1));
+            border-color: hsl(var(--b3) / 0.2);
+            color: hsl(var(--bc) / 0.8);
+        }
+
+        [data-theme="light"] .modal-box {
+            background-color: hsl(var(--b1));
+            border-color: hsl(var(--b3) / 0.2);
+        }
+
+        [data-theme="light"] .menu {
+            background-color: hsl(var(--b2) / 0.8);
+        }
+
+        [data-theme="light"] .navbar {
+            background-color: hsl(var(--b1) / 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        [data-theme="light"] .drawer-side {
+            background-color: hsl(var(--b1) / 0.95);
+            backdrop-filter: blur(8px);
+        }
+
+        [data-theme="light"] .badge {
+            background-color: hsl(var(--b3) / 0.2);
+            color: hsl(var(--bc) / 0.8);
+        }
+
+        [data-theme="light"] .btn-ghost {
+            color: hsl(var(--bc) / 0.8);
+        }
+
+        [data-theme="light"] .label-text {
+            color: hsl(var(--bc) / 0.8);
+        }
+
+        /* 滚动条样式优化 */
+        [data-theme="light"] ::-webkit-scrollbar-thumb {
+            background: hsl(var(--bc) / 0.1);
+        }
+
+        [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+            background: hsl(var(--bc) / 0.2);
+        }
+
+        /* 消息菜单样式优化 */
+        [data-theme="light"] .message-menu {
+            background: rgba(var(--b1), 0.8);
+            border-color: rgba(var(--b3), 0.1);
+        }
+
+        [data-theme="light"] .message-menu button {
+            background: rgba(var(--b2), 0.6);
+            color: hsl(var(--bc) / 0.8);
+        }
+
+        /* 回复预览样式优化 */
+        [data-theme="light"] #reply-preview {
+            background: hsl(var(--b2) / 0.2);
+            border-left: 4px solid hsl(var(--in) / 0.5);
+        }
+
+        [data-theme="light"] #reply-preview .reply-sender {
+            color: hsl(var(--in));
+            opacity: 0.8;
+        }
+
+        [data-theme="light"] #reply-preview .reply-text {
+            color: hsl(var(--bc) / 0.7);
+        }
+
+        [data-theme="light"] .bg-base-200 {
+            background-color: hsl(var(--b2) / 0.3);
+        }
+
+        /* 消息中的回复预览样式 */
+        [data-theme="light"] .chat-bubble .bg-base-200 {
+            background-color: hsl(var(--b2) / 0.2);
+            border-left: 2px solid hsl(var(--in) / 0.5);
+        }
+
+        [data-theme="light"] .chat-bubble .font-semibold.text-info {
+            color: hsl(var(--in) / 0.8);
+        }
+
+        [data-theme="light"] .chat-bubble .opacity-70 {
+            color: hsl(var(--bc) / 0.7);
+        }
+
+        /* 表情选择器样式优化 */
+        [data-theme="light"] #emoji-picker {
+            background: hsl(var(--b1) / 0.95);
+            border-color: hsl(var(--b3) / 0.1);
+        }
+
+        /* 时间戳和次要文本样式优化 */
+        [data-theme="light"] .chat-header time,
+        [data-theme="light"] .opacity-50,
+        [data-theme="light"] .opacity-70 {
+            opacity: 0.5;
+        }
+
+        /* 输入框占位符文本样式优化 */
+        [data-theme="light"] .input::placeholder,
+        [data-theme="light"] .textarea::placeholder {
+            color: hsl(var(--bc) / 0.4);
+        }
+
+        /* 链接样式优化 */
+        [data-theme="light"] .link {
+            color: hsl(var(--p) / 0.8);
+        }
+
+        /* 头像背景样式优化 */
+        [data-theme="light"] .avatar.placeholder div {
+            background: hsl(var(--n) / 0.8);
+        }
+
+        /* 修复滚动问题的样式 */
         .drawer-content {
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            padding: 0.5rem;
         }
 
         #chat-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0;
-        }
-
-        #chat-container.hidden {
-            display: none !important;
-        }
-
-        #welcome-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #welcome-container.hidden {
-            display: none !important;
+            height: calc(100vh - 64px); /* 减去导航栏高度 */
+            overflow: hidden;
         }
 
         #messages {
             flex: 1;
             overflow-y: auto;
+            padding: 1rem;
             scrollbar-width: thin;
-            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-            scroll-behavior: smooth;
-            min-height: 0;
-            padding-bottom: 0.5rem;
+            scrollbar-color: hsl(var(--bc) / 0.2) transparent;
         }
 
         #input-area {
-            border-top: 1px solid var(--border-color);
-            background: var(--b1);
+            flex-shrink: 0;
+            background: hsl(var(--b1));
+            border-top: 1px solid hsl(var(--b3));
+            padding: 0.5rem;
+            position: sticky;
+            bottom: 0;
+            width: 100%;
             z-index: 10;
         }
 
-        #input-area .btn-sm {
-            @apply h-8 min-h-0 px-3;
+        /* 修复抽屉问题的样式 */
+        @media (max-width: 1023px) {
+            .drawer-side {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            .drawer-toggle:checked ~ .drawer-side {
+                transform: translateX(0);
+            }
+
+            .drawer-overlay {
+                transition: background-color 0.3s ease-in-out;
+            }
         }
 
-        #input-area .input-sm {
-            @apply h-8 min-h-0;
+        /* 修改导航栏样式 */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            border-bottom: 1px solid hsl(var(--b3) / 0.1);
         }
 
-        @media (max-width: 768px) {
-            #chat-container {
-                height: calc(100vh - var(--navbar-height, 4rem) - env(safe-area-inset-bottom, 0px));
-            }
-            
-            #messages {
-                max-height: calc(100vh - 120px);
-            }
-            
-            #input-area {
-                padding-bottom: env(safe-area-inset-bottom, 0px);
-            }
+        [data-theme="light"] .navbar {
+            background-color: hsl(var(--b1) / 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        [data-theme="dark"] .navbar {
+            background-color: hsl(var(--b1));
+        }
+
+        /* 移除导航栏动画相关的类 */
+        .navbar {
+            transition: none !important;
         }
     </style>
 
@@ -845,10 +1130,31 @@
             createGroupModal.showModal();
         });
 
+        // 修改创建群组相关的函数
+        function closeCreateGroupModal() {
+            document.getElementById('group-name-input').value = '';
+            document.getElementById('group-members-input').value = '';
+            document.getElementById('create-group-modal').close();
+        }
+
         document.getElementById('confirm-create-group').addEventListener('click', async (e) => {
             e.preventDefault();
             
-            const groupName = document.getElementById('group-name-input').value;
+            const groupName = document.getElementById('group-name-input').value.trim();
+            if (!groupName) {
+                // 显示错误提示
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>Group name is required</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+                return;
+            }
+            
             const membersInput = document.getElementById('group-members-input').value;
             const members = membersInput.split(',').map(m => m.trim()).filter(m => m);
 
@@ -868,21 +1174,62 @@
                 if (result.success) {
                     // 添加新群聊到列表
                     const li = document.createElement('li');
+                    li.className = 'animate__animated animate__fadeIn';
                     li.innerHTML = `
-                        <a class="group-item" data-group="${groupName}">
-                            <div class="avatar placeholder">
-                                <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
-                                    <span>${groupName[0].toUpperCase()}</span>
+                        <div class="flex items-center justify-between w-full px-4 py-2 hover:bg-base-300 rounded-lg">
+                            <a class="group-item flex items-center gap-2" data-group="${groupName}">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                        <span>${groupName[0].toUpperCase()}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <span>${groupName}</span>
-                        </a>
+                                <span>${groupName}</span>
+                            </a>
+                            <button class="btn btn-ghost btn-sm group-manage-btn" data-group="${groupName}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
                     `;
-                    groupsList.appendChild(li);
-                    createGroupModal.close();
+                    document.getElementById('groups-list').appendChild(li);
+                    closeCreateGroupModal();
+                    
+                    // 显示成功提示
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-success">
+                            <span>Group created successfully!</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                } else {
+                    // 显示错误提示
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>${result.error || 'Failed to create group'}</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
                 }
             } catch (error) {
                 console.error('Error creating group:', error);
+                // 显示错误提示
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>Error creating group. Please try again.</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
             }
         });
 
@@ -924,15 +1271,10 @@
                 });
             }
 
-            // 立即在本地添加消息
-            addMessage(messageData);
-            
+            // 不再在这里立即添加消息，而是等待 Socket.IO 事件
             // 清空输入框和回复状态
             messageInput.value = '';
             cancelReply();
-            
-            // 滚动到底部
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         sendButton.addEventListener('click', () => {
@@ -950,18 +1292,18 @@
             currentChat.type = type;
             currentChat.target = target;
             
-            // 显示并启用输入区域
-            const inputArea = document.getElementById('input-area');
-            inputArea.style.display = 'block';  // 使用 style.display 而不是 classList
+            // 隐藏欢迎界面，显示聊天界面
+            welcomeContainer.classList.add('hidden');
+            chatContainer.classList.remove('hidden');
+            chatContainer.style.display = 'block';  // 显式设置display属性
+            chatContainer.classList.add('flex-1');
+            currentChatTitle.textContent = target;
+            
+            // 启用输入区域的所有控件
             messageInput.disabled = false;
             emojiButton.disabled = false;
             fileButton.disabled = false;
             sendButton.disabled = false;
-            
-            // 隐藏欢迎界面，显示聊天界面
-            welcomeContainer.classList.add('hidden');
-            chatContainer.classList.remove('hidden');
-            currentChatTitle.textContent = target;
             
             // 清空消息容器
             while (messagesContainer.firstChild) {
@@ -995,27 +1337,34 @@
                     
                     // 添加消息
                     result.messages.forEach(message => {
-                        addMessage(message);
+                        addMessage(message, false); // 传入false表示不自动滚动
                     });
                     
-                    // 确保滚动到底部
-                    setTimeout(() => {
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    }, 100);
+                    // 在所有消息加载完成后，滚动到底部
+                    scrollToBottom();
                 }
             } catch (error) {
                 console.error('Error loading chat history:', error);
             }
         }
 
+        // 添加滚动到底部的函数
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
         // 添加消息到聊天窗口
-        function addMessage(message) {
+        function addMessage(message, shouldScroll = true) {
             if (message.is_recalled) {
                 message.content = '<span class="opacity-50">Message has been recalled</span>';
             }
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat ${message.sender === nickname ? 'chat-end' : 'chat-start'} mb-4 animate__animated animate__fadeIn`;
+            messageDiv.setAttribute('data-message-id', message.timestamp);  // 将消息ID添加到外层div
             
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = `chat-bubble ${message.sender === nickname ? 'chat-bubble-primary' : ''} relative group`;
@@ -1105,14 +1454,11 @@
             messageDiv.appendChild(headerDiv);
             messageDiv.appendChild(bubbleDiv);
             
-            // 修改滚动逻辑
-            const shouldScroll = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
-            
             messagesContainer.appendChild(messageDiv);
             
-            // 只有在接近底部时才自动滚动
+            // 只有在shouldScroll为true时才滚动到底部
             if (shouldScroll) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                scrollToBottom();
             }
         }
 
@@ -1140,7 +1486,12 @@
 
             const reactionPicker = document.createElement('div');
             reactionPicker.id = 'reaction-picker';
-            reactionPicker.className = 'absolute -top-12 left-0 bg-base-100 shadow-lg rounded-lg p-2 flex gap-2 z-50 animate__animated animate__fadeIn';
+            
+            // 判断是否是自己发送的消息（右侧消息）
+            const isOwnMessage = bubbleElement.closest('.chat-end') !== null;
+            
+            // 根据消息位置设置不同的类名和样式
+            reactionPicker.className = `absolute -top-12 ${isOwnMessage ? 'right-0' : 'left-0'} bg-base-100 shadow-lg rounded-lg p-2 flex gap-2 z-50 animate__animated animate__fadeIn`;
             
             const reactions = ['👍', '❤️', '😄', '😢', '😮', '👏', '🎉', '🚀'];
             reactions.forEach(emoji => {
@@ -1184,11 +1535,16 @@
             }
         });
 
-        // 添加消息撤回和表情回应的 Socket 事件监听
+        // 修改 Socket.IO 事件监听器
         socket.on('new_private_message', (data) => {
             if (currentChat.type === 'private' && 
                 (data.sender === currentChat.target || data.sender === nickname)) {
                 addMessage(data);
+                // 如果是新消息，滚动到底部
+                if (data.sender === currentChat.target || 
+                    (data.sender === nickname && !document.querySelector(`[data-message-id="${data.timestamp}"]`))) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
             }
             // 收到新消息后刷新联系人列表
             loadActiveContacts();
@@ -1197,22 +1553,41 @@
         socket.on('new_group_message', (data) => {
             if (currentChat.type === 'group' && data.group === currentChat.target) {
                 addMessage(data.message);
+                // 如果是新消息，滚动到底部
+                if (data.message.sender === currentChat.target || 
+                    (data.message.sender === nickname && !document.querySelector(`[data-message-id="${data.message.timestamp}"]`))) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
             }
         });
 
         socket.on('message_recalled', (data) => {
-            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-            if (messageElement) {
-                messageElement.innerHTML = '<span class="opacity-50">Message has been recalled</span>';
-            }
+            // 使用属性选择器同时检查两个元素
+            const messageElements = document.querySelectorAll(`[data-message-id="${data.message_id}"]`);
+            messageElements.forEach(element => {
+                if (element.classList.contains('chat-bubble')) {
+                    const contentDiv = element.querySelector('.message-content');
+                    if (contentDiv) {
+                        contentDiv.innerHTML = '<span class="opacity-50">Message has been recalled</span>';
+                    }
+                    // 移除消息菜单
+                    const menuDiv = element.querySelector('.message-menu');
+                    if (menuDiv) {
+                        menuDiv.remove();
+                    }
+                }
+            });
         });
 
         // 修改 Socket.IO 事件监听器
         socket.on('reaction_updated', (data) => {
-            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-            if (messageElement) {
-                updateMessageReactions(messageElement, data.reactions);
-            }
+            // 查找所有匹配的消息元素（包括气泡和外层容器）
+            const messageElements = document.querySelectorAll(`[data-message-id="${data.message_id}"]`);
+            messageElements.forEach(element => {
+                if (element.classList.contains('chat-bubble')) {
+                    updateMessageReactions(element, data.reactions);
+                }
+            });
         });
 
         // 添加长按支持
@@ -1291,16 +1666,10 @@
         // 移动端触摸事件优化
         document.addEventListener('touchstart', function() {}, {passive: true});
 
-        // 自动隐藏移动端导航栏
+        // 移除自动隐藏导航栏的代码
         let lastScrollTop = 0;
         messagesContainer.addEventListener('scroll', function() {
-            const st = messagesContainer.scrollTop;
-            if (st > lastScrollTop && window.innerWidth < 768) {
-                document.querySelector('.navbar').classList.add('animate__fadeOutUp');
-            } else {
-                document.querySelector('.navbar').classList.remove('animate__fadeOutUp');
-            }
-            lastScrollTop = st;
+            // 不再处理导航栏的显示/隐藏
         }, {passive: true});
 
         // 移动端抽屉关闭优化
@@ -1344,15 +1713,15 @@
                 // 添加过渡类
                 document.body.classList.add('theme-transition');
                 
-                html.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-
                 // 更新所有需要主题过渡的元素
-                const elements = document.querySelectorAll('.drawer-content, .drawer-side, .chat-bubble, .input, .btn');
+                const elements = document.querySelectorAll('.drawer-content, .drawer-side, .chat-bubble, .input, .btn, .modal-box, .textarea, .navbar, .menu');
                 elements.forEach(el => {
                     el.classList.add('theme-transition');
-                    setTimeout(() => el.classList.remove('theme-transition'), 300);
                 });
+                
+                // 设置新主题
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
 
                 // 更新 emoji-picker 主题
                 const picker = document.querySelector('emoji-picker');
@@ -1364,14 +1733,20 @@
                 // 移除过渡类
                 setTimeout(() => {
                     document.body.classList.remove('theme-transition');
+                    elements.forEach(el => {
+                        el.classList.remove('theme-transition');
+                    });
                 }, 300);
             }
 
-            // 移动端主题切换按钮
-            themeToggle.addEventListener('click', toggleTheme);
+            // 添加点击事件监听器
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
             
-            // 桌面端主题切换按钮
-            themeToggleDesktop.addEventListener('click', toggleTheme);
+            if (themeToggleDesktop) {
+                themeToggleDesktop.addEventListener('click', toggleTheme);
+            }
         }
 
         // 确保在 DOM 完全加载后初始化
@@ -1394,6 +1769,135 @@
             // 从 localStorage 获取主题并应用
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // 添加联系人按钮点击事件
+            document.getElementById('add-contact').addEventListener('click', async () => {
+                const input = document.getElementById('new-contact');
+                const nickname = input.value.trim();
+                
+                if (!nickname) {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>请输入联系人昵称</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    return;
+                }
+
+                // 检查是否是自己
+                if (nickname === window.nickname) {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>不能添加自己为联系人</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    return;
+                }
+
+                try {
+                    // 先检查用户是否存在
+                    const checkResponse = await fetch('/check_user_exists', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ nickname: nickname })
+                    });
+
+                    const checkResult = await checkResponse.json();
+                    if (!checkResult.exists) {
+                        const toast = document.createElement('div');
+                        toast.className = 'toast toast-center';
+                        toast.innerHTML = `
+                            <div class="alert alert-error">
+                                <span>该用户不存在</span>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                        return;
+                    }
+
+                    // 检查是否已经在联系人列表中
+                    const existingContact = document.querySelector(`.contact-item[data-nickname="${nickname}"]`);
+                    if (existingContact) {
+                        const toast = document.createElement('div');
+                        toast.className = 'toast toast-center';
+                        toast.innerHTML = `
+                            <div class="alert alert-warning">
+                                <span>该用户已在联系人列表中</span>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                        return;
+                    }
+
+                    // 创建新的联系人项
+                    const li = document.createElement('li');
+                    li.className = 'animate__animated animate__fadeIn';
+                    li.innerHTML = `
+                        <a class="contact-item flex items-center gap-2 px-4 py-2 hover:bg-base-300 rounded-lg" data-nickname="${nickname}">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                    <span>${nickname[0].toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <span>${nickname}</span>
+                        </a>
+                    `;
+
+                    // 添加到联系人列表
+                    const contactsList = document.getElementById('contacts-list');
+                    contactsList.appendChild(li);
+
+                    // 清空输入框
+                    input.value = '';
+
+                    // 显示成功提示
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-success">
+                            <span>联系人添加成功</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+
+                    // 添加点击事件监听器
+                    const contactItem = li.querySelector('.contact-item');
+                    contactItem.addEventListener('click', () => {
+                        switchChat('private', nickname);
+                        // 在移动端自动关闭抽屉
+                        if (window.innerWidth < 768) {
+                            document.getElementById('chat-drawer').checked = false;
+                        }
+                    });
+
+                    // 刷新联系人列表
+                    loadActiveContacts();
+                } catch (error) {
+                    console.error('Error adding contact:', error);
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>添加联系人失败，请稍后重试</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            });
 
             // 添加联系人点击事件
             contactsList.addEventListener('click', (e) => {
@@ -1421,12 +1925,24 @@
                 }
             });
 
-            // 在页面加载时禁用输入区域
+            // 在页面加载时禁用输入区域的所有控件
             messageInput.disabled = true;
             emojiButton.disabled = true;
             fileButton.disabled = true;
             sendButton.disabled = true;
-            document.getElementById('input-area').style.display = 'none';  // 使用 style.display
+            
+            // ... 其他初始化代码 ...
+        });
+
+        // 监听窗口大小变化，处理抽屉行为
+        window.addEventListener('resize', () => {
+            const drawerToggle = document.getElementById('chat-drawer');
+            if (window.innerWidth >= 1024) {
+                // 在桌面模式下，确保抽屉始终打开
+                if (drawerToggle) {
+                    drawerToggle.checked = true;
+                }
+            }
         });
 
         // 处理回复消息
@@ -1463,49 +1979,6 @@
 
         // 处理表情回应
         function handleAddReaction(messageId, emoji) {
-            // 获取当前消息元素
-            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (!messageElement) return;
-
-            // 检查用户是否已经有表情回应
-            const reactions = messageElement.querySelectorAll('.reaction-badge');
-            let hasReacted = false;
-            let existingEmoji = null;
-
-            reactions.forEach(badge => {
-                const [emojiText] = badge.textContent.trim().split(' ');
-                const users = JSON.parse(badge.getAttribute('data-users') || '[]');
-                if (users.includes(nickname)) {
-                    hasReacted = true;
-                    existingEmoji = emojiText;
-                }
-            });
-
-            // 如果用户已经有表情回应
-            if (hasReacted) {
-                // 如果点击的是同一个表情，则取消回应
-                if (existingEmoji === emoji) {
-                    socket.emit('add_reaction', {
-                        message_id: messageId,
-                        type: currentChat.type,
-                        target: currentChat.target,
-                        emoji: emoji,
-                        action: 'remove'
-                    });
-                    return;
-                }
-                
-                // 如果是不同表情，先移除旧表情
-                socket.emit('add_reaction', {
-                    message_id: messageId,
-                    type: currentChat.type,
-                    target: currentChat.target,
-                    emoji: existingEmoji,
-                    action: 'remove'
-                });
-            }
-
-            // 添加新表情
             socket.emit('add_reaction', {
                 message_id: messageId,
                 type: currentChat.type,
@@ -1513,26 +1986,38 @@
                 emoji: emoji,
                 action: 'add'
             });
+
+            // 移除表情选择器
+            const reactionPicker = document.getElementById('reaction-picker');
+            if (reactionPicker) {
+                reactionPicker.remove();
+            }
         }
 
         // 修改表情回应显示区域的创建逻辑
         function updateMessageReactions(messageElement, reactions) {
-            // 移除现有的表情回应区域
-            const existingReactionsDiv = messageElement.querySelector('.reactions');
-            if (existingReactionsDiv) {
-                existingReactionsDiv.remove();
+            // 移除现有的表情回应容器
+            const existingReactions = messageElement.querySelector('.reactions-container');
+            if (existingReactions) {
+                existingReactions.remove();
             }
 
+            // 移除 has-reactions 类
+            messageElement.classList.remove('has-reactions');
+
+            // 如果有表情回应，创建新的容器
             if (Object.keys(reactions).length > 0) {
+                // 添加 has-reactions 类
+                messageElement.classList.add('has-reactions');
+
                 const reactionsDiv = document.createElement('div');
-                reactionsDiv.className = 'reactions flex gap-1 mt-2';
+                reactionsDiv.className = 'reactions-container';
 
                 for (const [emoji, users] of Object.entries(reactions)) {
                     const reactionBadge = document.createElement('div');
                     reactionBadge.className = 'badge badge-sm gap-1 cursor-pointer hover:bg-base-300';
                     reactionBadge.innerHTML = `${emoji} ${users.length}`;
                     reactionBadge.setAttribute('data-users', JSON.stringify(users));
-                    // 如果当前用户已经选择了这个表情，添加高亮效果
                     if (users.includes(nickname)) {
                         reactionBadge.classList.add('badge-primary');
                     }
@@ -1542,25 +2027,26 @@
                     };
                     reactionsDiv.appendChild(reactionBadge);
                 }
-                messageElement.appendChild(reactionsDiv);
+
+                // 确保将表情回应容器添加到消息气泡中
+                const bubbleElement = messageElement.classList.contains('chat-bubble') ? 
+                    messageElement : messageElement.querySelector('.chat-bubble');
+                if (bubbleElement) {
+                    bubbleElement.appendChild(reactionsDiv);
+                }
             }
         }
 
         // 处理消息撤回
         function handleRecallMessage(messageId) {
-            if (currentChat.type === 'private') {
-                socket.emit('recall_message', {
-                    message_id: messageId,
-                    type: 'private',
-                    target: currentChat.target
-                });
-            } else if (currentChat.type === 'group') {
-                socket.emit('recall_message', {
-                    message_id: messageId,
-                    type: 'group',
-                    target: currentChat.target
-                });
-            }
+            // 确保我们使用正确的消息ID
+            console.log('Recalling message with ID:', messageId);
+            
+            socket.emit('recall_message', {
+                message_id: messageId,
+                type: currentChat.type,
+                target: currentChat.target
+            });
         }
 
         // 添加加载活跃联系人的函数
@@ -1593,6 +2079,946 @@
                 console.error('Error loading active contacts:', error);
             }
         }
+
+        // 群组管理相关函数
+        let currentGroupInfo = null;
+        let selectedMembers = new Set();  // 初始化 selectedMembers
+
+        // 群组管理按钮点击事件
+        document.querySelectorAll('.group-manage-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const groupName = btn.getAttribute('data-group');
+                showGroupInfo(groupName);
+            });
+        });
+
+        // 显示群组信息
+        async function showGroupInfo(groupName) {
+            try {
+                const response = await fetch('/get_group_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ group_name: groupName })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    currentGroupInfo = data;
+                    
+                    // 更新群组信息显示
+                    document.getElementById('group-name-display').value = data.name;
+                    document.getElementById('group-announcement').value = data.announcement || '';
+                    
+                    // 更新成员列表
+                    const membersList = document.getElementById('group-members-list');
+                    membersList.innerHTML = '';
+                    
+                    data.members.forEach(member => {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center';
+                        
+                        let memberTitle = member;
+                        if (member === data.created_by) {
+                            memberTitle += ' (群主)';
+                        } else if (data.admins && data.admins.includes(member)) {
+                            memberTitle += ' (管理员)';
+                        }
+                        
+                        li.innerHTML = `
+                            <span>${memberTitle}</span>
+                            ${member !== data.created_by && (data.created_by === nickname || (data.admins && data.admins.includes(nickname))) ? 
+                                `<button class="btn btn-ghost btn-xs" onclick="removeMember('${member}')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>` : 
+                                ''
+                            }
+                        `;
+                        membersList.appendChild(li);
+                    });
+                    
+                    // 显示模态框
+                    document.getElementById('group-info-modal').showModal();
+                }
+            } catch (error) {
+                console.error('Error loading group info:', error);
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>加载群组信息失败</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        }
+
+        // 重命名群组
+        async function renameGroup(newName) {
+            if (!currentGroupInfo || !newName) return;
+            
+            try {
+                const response = await fetch('/update_group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_name: currentGroupInfo.name,
+                        new_name: newName,
+                        action: 'rename'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // 更新当前群组信息
+                    currentGroupInfo.name = newName;
+                    document.getElementById('group-name-display').value = newName;
+                }
+            } catch (error) {
+                console.error('Error renaming group:', error);
+            }
+        }
+
+        // 更新群公告
+        async function updateAnnouncement(announcement) {
+            if (!currentGroupInfo) return;
+            
+            try {
+                const response = await fetch('/update_group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_name: currentGroupInfo.name,
+                        announcement: announcement,
+                        action: 'update_announcement'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    currentGroupInfo.announcement = announcement;
+                    document.getElementById('group-announcement').value = announcement;
+                }
+            } catch (error) {
+                console.error('Error updating announcement:', error);
+            }
+        }
+
+        // 添加群成员
+        async function addGroupMember(members) {
+            if (!currentGroupInfo || !members) return;
+            
+            try {
+                const response = await fetch('/update_group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_name: currentGroupInfo.name,
+                        members: members,
+                        action: 'add_member'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // 重新加载群组信息
+                    showGroupInfo(currentGroupInfo.name);
+                }
+            } catch (error) {
+                console.error('Error adding members:', error);
+            }
+        }
+
+        // 移除群成员
+        async function removeMember(member) {
+            if (!currentGroupInfo || !member) return;
+            
+            if (!confirm(`Are you sure you want to remove ${member} from the group?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/update_group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_name: currentGroupInfo.name,
+                        member: member,
+                        action: 'remove_member'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // 重新加载群组信息
+                    showGroupInfo(currentGroupInfo.name);
+                }
+            } catch (error) {
+                console.error('Error removing member:', error);
+            }
+        }
+
+        // 添加群组更新事件监听
+        socket.on('group_updated', (data) => {
+            if (data.type === 'group_renamed') {
+                // 更新群组列表中的名称和头像
+                const groupItem = document.querySelector(`.group-item[data-group="${data.old_name}"]`);
+                if (groupItem) {
+                    // 更新 data-group 属性
+                    groupItem.setAttribute('data-group', data.new_name);
+                    
+                    // 更新群组名称文本
+                    const nameSpan = groupItem.querySelector('span');
+                    if (nameSpan) {
+                        nameSpan.textContent = data.new_name;
+                    }
+                    
+                    // 更新头像文本
+                    const avatarSpan = groupItem.closest('li').querySelector('.avatar span');
+                    if (avatarSpan) {
+                        avatarSpan.textContent = data.new_name[0].toUpperCase();
+                    }
+                    
+                    // 更新管理按钮的群组名称属性
+                    const manageBtn = groupItem.closest('li').querySelector('.group-manage-btn');
+                    if (manageBtn) {
+                        manageBtn.setAttribute('data-group', data.new_name);
+                    }
+                }
+                
+                // 如果当前正在查看这个群组，更新标题
+                if (currentChat.type === 'group' && currentChat.target === data.old_name) {
+                    currentChat.target = data.new_name;
+                    currentChatTitle.textContent = data.new_name;
+                }
+
+                // 如果当前正在查看群组信息，关闭模态框
+                const groupInfoModal = document.getElementById('group-info-modal');
+                if (groupInfoModal.open) {
+                    groupInfoModal.close();
+                }
+            }
+            else if (data.type === 'announcement_updated') {
+                // 如果当前正在查看群组信息，更新公告显示
+                if (currentGroupInfo && currentGroupInfo.name === data.group_name) {
+                    document.getElementById('group-announcement').value = data.announcement;
+                }
+            }
+            else if (data.type === 'members_added' || data.type === 'member_removed') {
+                // 如果当前正在查看这个群组的信息，重新加载群组信息
+                if (currentGroupInfo && currentGroupInfo.name === data.group_name) {
+                    showGroupInfo(data.group_name);
+                }
+            }
+        });
+
+        // 添加编辑群名按钮事件
+        document.getElementById('edit-group-name-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const input = document.getElementById('group-name-display');
+            input.readOnly = false;
+            input.focus();
+            
+            function saveGroupName() {
+                const newName = input.value.trim();
+                if (newName && newName !== currentGroupInfo.name) {
+                    renameGroup(newName);
+                }
+                input.readOnly = true;
+                input.removeEventListener('keypress', handleKeyPress);
+                input.removeEventListener('blur', saveGroupName);
+            }
+            
+            function handleKeyPress(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveGroupName();
+                }
+            }
+            
+            input.addEventListener('keypress', handleKeyPress);
+            input.addEventListener('blur', saveGroupName);
+        });
+
+        // 添加编辑公告按钮事件
+        document.getElementById('edit-announcement-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const textarea = document.getElementById('group-announcement');
+            textarea.readOnly = false;
+            textarea.focus();
+            
+            function saveAnnouncement() {
+                const newAnnouncement = textarea.value.trim();
+                if (newAnnouncement !== currentGroupInfo.announcement) {
+                    updateAnnouncement(newAnnouncement);
+                }
+                textarea.readOnly = true;
+                textarea.removeEventListener('blur', saveAnnouncement);
+            }
+            
+            textarea.addEventListener('blur', saveAnnouncement);
+        });
+
+        // 修改群组点击事件，添加长按显示群组信息
+        let groupPressTimer;
+        document.querySelectorAll('.group-item').forEach(item => {
+            item.addEventListener('touchstart', (e) => {
+                groupPressTimer = setTimeout(() => {
+                    const groupName = item.getAttribute('data-group');
+                    showGroupInfo(groupName);
+                }, 500);
+            });
+            
+            item.addEventListener('touchend', () => {
+                clearTimeout(groupPressTimer);
+            });
+            
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const groupName = item.getAttribute('data-group');
+                showGroupInfo(groupName);
+            });
+        });
+
+        // Add Member Modal Functions
+        function showAddMemberModal() {
+            selectedMembers.clear();
+            const searchInput = document.getElementById('member-search');
+            const resultsContainer = document.getElementById('member-search-results');
+            const addMemberModal = document.getElementById('add-member-modal');
+            
+            if (searchInput) searchInput.value = '';
+            if (resultsContainer) resultsContainer.innerHTML = '';
+            if (addMemberModal) {
+                addMemberModal.showModal();
+                // 更新添加按钮状态
+                const addButton = addMemberModal.querySelector('.btn-primary');
+                if (addButton) {
+                    addButton.disabled = true;
+                    addButton.textContent = 'Add Selected';
+                }
+            }
+        }
+
+        function closeAddMemberModal() {
+            const modal = document.getElementById('add-member-modal');
+            if (modal) modal.close();
+        }
+
+        function toggleMemberSelection(user, element) {
+            if (!selectedMembers || !element) return;
+
+            if (selectedMembers.has(user)) {
+                selectedMembers.delete(user);
+                element.classList.remove('selected');
+                element.querySelector('.selected-indicator')?.classList.add('invisible');
+                element.querySelector('.selected-indicator')?.classList.remove('visible');
+            } else {
+                selectedMembers.add(user);
+                element.classList.add('selected');
+                element.querySelector('.selected-indicator')?.classList.remove('invisible');
+                element.querySelector('.selected-indicator')?.classList.add('visible');
+            }
+
+            // Update the add button state
+            const addButton = document.querySelector('#add-member-modal .btn-primary');
+            if (addButton) {
+                addButton.disabled = selectedMembers.size === 0;
+                addButton.textContent = selectedMembers.size > 0 ? 
+                    `Add Selected (${selectedMembers.size})` : 'Add Selected';
+            }
+        }
+
+        // Debounce function to limit API calls
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const debouncedSearch = debounce(async (query) => {
+            try {
+                const response = await fetch('/search_users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                const resultsContainer = document.getElementById('member-search-results');
+                resultsContainer.innerHTML = '';
+
+                if (data.users.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="text-center p-4 opacity-70">
+                            No users found matching "${query}"
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.users.forEach(user => {
+                    if (!currentGroupInfo.members.includes(user)) {
+                        const div = document.createElement('div');
+                        div.className = `member-search-item ${selectedMembers.has(user) ? 'selected' : ''} animate__animated animate__fadeIn`;
+                        div.innerHTML = `
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                    <span>${user[0].toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <span class="flex-1">${user}</span>
+                            <div class="selected-indicator ${selectedMembers.has(user) ? 'visible' : 'invisible'}">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        `;
+                        div.onclick = () => toggleMemberSelection(user, div);
+                        resultsContainer.appendChild(div);
+                    }
+                });
+            } catch (error) {
+                console.error('Error searching users:', error);
+                const resultsContainer = document.getElementById('member-search-results');
+                resultsContainer.innerHTML = `
+                    <div class="text-center p-4 text-error">
+                        Error searching users. Please try again.
+                    </div>
+                `;
+            }
+        }, 300);
+
+        async function confirmAddMembers() {
+            if (selectedMembers.size > 0) {
+                const loadingToast = document.createElement('div');
+                loadingToast.className = 'toast toast-center';
+                loadingToast.innerHTML = `
+                    <div class="alert alert-info">
+                        <span>Adding members...</span>
+                    </div>
+                `;
+                document.body.appendChild(loadingToast);
+
+                try {
+                    await addGroupMember(Array.from(selectedMembers));
+                    loadingToast.remove();
+                    
+                    const successToast = document.createElement('div');
+                    successToast.className = 'toast toast-center';
+                    successToast.innerHTML = `
+                        <div class="alert alert-success">
+                            <span>Members added successfully!</span>
+                        </div>
+                    `;
+                    document.body.appendChild(successToast);
+                    setTimeout(() => successToast.remove(), 3000);
+                    
+                    closeAddMemberModal();
+                } catch (error) {
+                    loadingToast.remove();
+                    
+                    const errorToast = document.createElement('div');
+                    errorToast.className = 'toast toast-center';
+                    errorToast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>Error adding members. Please try again.</span>
+                        </div>
+                    `;
+                    document.body.appendChild(errorToast);
+                    setTimeout(() => errorToast.remove(), 3000);
+                }
+            }
+        }
+
+        // Update event listeners
+        document.getElementById('add-member-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showAddMemberModal();
+        });
+
+        document.getElementById('member-search').addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (query) {
+                debouncedSearch(query);
+            } else {
+                document.getElementById('member-search-results').innerHTML = '';
+            }
+        });
+
+        // Update the member list rendering with animations
+        function updateMembersList(members) {
+            const membersList = document.getElementById('group-members-list');
+            membersList.innerHTML = '';
+            
+            members.forEach(member => {
+                const li = document.createElement('li');
+                li.className = 'animate__animated animate__fadeIn';
+                
+                let roleText = '';
+                if (member === currentGroupInfo.created_by) {
+                    roleText = '<span class="member-role">Owner</span>';
+                } else if (currentGroupInfo.admins.includes(member)) {
+                    roleText = '<span class="member-role">Admin</span>';
+                }
+                
+                li.innerHTML = `
+                    <div class="member-info">
+                        <div class="avatar placeholder">
+                            <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                <span>${member[0].toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-medium">${member}</span>
+                            ${roleText}
+                        </div>
+                    </div>
+                    ${member !== currentGroupInfo.created_by && (currentGroupInfo.created_by === nickname || currentGroupInfo.admins.includes(nickname)) ? 
+                        `<button class="btn btn-ghost btn-sm btn-remove-member" onclick="removeMember('${member}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>` : 
+                        ''
+                    }
+                `;
+                membersList.appendChild(li);
+            });
+        }
+
+        // 群组名称保存按钮事件
+        document.getElementById('save-group-name-btn').addEventListener('click', async function() {
+            const input = document.getElementById('group-name-display');
+            const newName = input.value.trim();
+            const oldName = currentGroupInfo ? currentGroupInfo.name : '';
+            
+            if (newName && newName !== oldName) {
+                try {
+                    const response = await fetch('/update_group', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            group_name: oldName,
+                            new_name: newName,
+                            action: 'rename'
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // 更新当前群组信息
+                        currentGroupInfo.name = newName;
+                        // 更新保存按钮状态
+                        updateSaveButtonState(this, newName, newName);
+                        
+                        // 显示成功提示
+                        const toast = document.createElement('div');
+                        toast.className = 'toast toast-center';
+                        toast.innerHTML = `
+                            <div class="alert alert-success">
+                                <span>群组名称更新成功！</span>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                    } else {
+                        throw new Error(result.error || '更新失败');
+                    }
+                } catch (error) {
+                    console.error('Error updating group name:', error);
+                    // 显示错误提示
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>${error.message || '群组名称更新失败'}</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            }
+        });
+
+        // 群组公告保存按钮事件
+        document.getElementById('save-announcement-btn').addEventListener('click', async function() {
+            const textarea = document.getElementById('group-announcement');
+            const newAnnouncement = textarea.value.trim();
+            const oldAnnouncement = currentGroupInfo ? currentGroupInfo.announcement || '' : '';
+            
+            if (newAnnouncement !== oldAnnouncement) {
+                try {
+                    const response = await fetch('/update_group', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            group_name: currentGroupInfo.name,
+                            announcement: newAnnouncement,
+                            action: 'update_announcement'
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // 更新当前群组信息
+                        currentGroupInfo.announcement = newAnnouncement;
+                        // 更新保存按钮状态
+                        updateSaveButtonState(this, newAnnouncement, newAnnouncement);
+                        
+                        // 显示成功提示
+                        const toast = document.createElement('div');
+                        toast.className = 'toast toast-center';
+                        toast.innerHTML = `
+                            <div class="alert alert-success">
+                                <span>群组公告更新成功！</span>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                    } else {
+                        throw new Error(result.error || '更新失败');
+                    }
+                } catch (error) {
+                    console.error('Error updating announcement:', error);
+                    // 显示错误提示
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>${error.message || '群组公告更新失败'}</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            }
+        });
+
+        // 更新保存按钮状态的通用函数
+        function updateSaveButtonState(button, newValue, oldValue) {
+            if (!button) return;
+            
+            const hasChanged = newValue !== oldValue;
+            const isEmpty = !newValue.trim();
+            
+            button.disabled = !hasChanged || isEmpty;
+            button.classList.remove('btn-ghost', 'btn-primary', 'btn-disabled');
+            
+            if (!hasChanged || isEmpty) {
+                button.classList.add('btn-ghost', 'btn-disabled');
+            } else {
+                button.classList.add('btn-primary');
+            }
+        }
+
+        // 修改群组名称输入监听
+        function setupGroupInfoListeners() {
+            const groupNameInput = document.getElementById('group-name-display');
+            const groupAnnouncementInput = document.getElementById('group-announcement');
+            const saveNameBtn = document.getElementById('save-group-name-btn');
+            const saveAnnouncementBtn = document.getElementById('save-announcement-btn');
+
+            if (groupNameInput) {
+                // 移除现有的监听器（如果有）
+                const newInput = groupNameInput.cloneNode(true);
+                groupNameInput.parentNode.replaceChild(newInput, groupNameInput);
+                
+                newInput.addEventListener('input', function() {
+                    const newName = this.value.trim();
+                    const oldName = currentGroupInfo ? currentGroupInfo.name : '';
+                    if (saveNameBtn) {
+                        updateSaveButtonState(saveNameBtn, newName, oldName);
+                    }
+                });
+            }
+
+            if (groupAnnouncementInput) {
+                // 移除现有的监听器（如果有）
+                const newTextarea = groupAnnouncementInput.cloneNode(true);
+                groupAnnouncementInput.parentNode.replaceChild(newTextarea, groupAnnouncementInput);
+                
+                newTextarea.addEventListener('input', function() {
+                    const newAnnouncement = this.value.trim();
+                    const oldAnnouncement = currentGroupInfo ? currentGroupInfo.announcement || '' : '';
+                    if (saveAnnouncementBtn) {
+                        updateSaveButtonState(saveAnnouncementBtn, newAnnouncement, oldAnnouncement);
+                    }
+                });
+            }
+
+            // 重新添加保存按钮的点击事件监听器
+            if (saveNameBtn) {
+                saveNameBtn.addEventListener('click', async function() {
+                    const input = document.getElementById('group-name-display');
+                    const newName = input.value.trim();
+                    const oldName = currentGroupInfo ? currentGroupInfo.name : '';
+                    
+                    if (newName && newName !== oldName) {
+                        try {
+                            const response = await fetch('/update_group', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    group_name: oldName,
+                                    new_name: newName,
+                                    action: 'rename'
+                                })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                // 更新当前群组信息
+                                currentGroupInfo.name = newName;
+                                // 更新保存按钮状态
+                                updateSaveButtonState(this, newName, newName);
+                                
+                                // 显示成功提示
+                                const toast = document.createElement('div');
+                                toast.className = 'toast toast-center';
+                                toast.innerHTML = `
+                                    <div class="alert alert-success">
+                                        <span>群组名称更新成功！</span>
+                                    </div>
+                                `;
+                                document.body.appendChild(toast);
+                                setTimeout(() => toast.remove(), 3000);
+                            } else {
+                                throw new Error(result.error || '更新失败');
+                            }
+                        } catch (error) {
+                            console.error('Error updating group name:', error);
+                            const toast = document.createElement('div');
+                            toast.className = 'toast toast-center';
+                            toast.innerHTML = `
+                                <div class="alert alert-error">
+                                    <span>${error.message || '群组名称更新失败'}</span>
+                                </div>
+                            `;
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.remove(), 3000);
+                        }
+                    }
+                });
+            }
+
+            if (saveAnnouncementBtn) {
+                saveAnnouncementBtn.addEventListener('click', async function() {
+                    const textarea = document.getElementById('group-announcement');
+                    const newAnnouncement = textarea.value.trim();
+                    const oldAnnouncement = currentGroupInfo ? currentGroupInfo.announcement || '' : '';
+                    
+                    if (newAnnouncement !== oldAnnouncement) {
+                        try {
+                            const response = await fetch('/update_group', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    group_name: currentGroupInfo.name,
+                                    announcement: newAnnouncement,
+                                    action: 'update_announcement'
+                                })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                // 更新当前群组信息
+                                currentGroupInfo.announcement = newAnnouncement;
+                                // 更新保存按钮状态
+                                updateSaveButtonState(this, newAnnouncement, newAnnouncement);
+                                
+                                // 显示成功提示
+                                const toast = document.createElement('div');
+                                toast.className = 'toast toast-center';
+                                toast.innerHTML = `
+                                    <div class="alert alert-success">
+                                        <span>群组公告更新成功！</span>
+                                    </div>
+                                `;
+                                document.body.appendChild(toast);
+                                setTimeout(() => toast.remove(), 3000);
+                            } else {
+                                throw new Error(result.error || '更新失败');
+                            }
+                        } catch (error) {
+                            console.error('Error updating announcement:', error);
+                            const toast = document.createElement('div');
+                            toast.className = 'toast toast-center';
+                            toast.innerHTML = `
+                                <div class="alert alert-error">
+                                    <span>${error.message || '群组公告更新失败'}</span>
+                                </div>
+                            `;
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.remove(), 3000);
+                        }
+                    }
+                });
+            }
+        }
+
+        // 在 DOM 加载完成后设置事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            setupGroupInfoListeners();
+        });
+
+        // 添加联系人相关代码
+        document.getElementById('add-contact').addEventListener('click', async () => {
+            const input = document.getElementById('new-contact');
+            const nickname = input.value.trim();
+            
+            if (!nickname) {
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>请输入联系人昵称</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+                return;
+            }
+
+            // 检查是否是自己
+            if (nickname === window.nickname) {
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>不能添加自己为联系人</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+                return;
+            }
+
+            try {
+                // 先检查用户是否存在
+                const checkResponse = await fetch('/check_user_exists', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nickname: nickname })
+                });
+
+                const checkResult = await checkResponse.json();
+                if (!checkResult.exists) {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-error">
+                            <span>该用户不存在</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    return;
+                }
+
+                // 检查是否已经在联系人列表中
+                const existingContact = document.querySelector(`.contact-item[data-nickname="${nickname}"]`);
+                if (existingContact) {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-center';
+                    toast.innerHTML = `
+                        <div class="alert alert-warning">
+                            <span>该用户已在联系人列表中</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    return;
+                }
+
+                // 创建新的联系人项
+                const li = document.createElement('li');
+                li.className = 'animate__animated animate__fadeIn';
+                li.innerHTML = `
+                    <a class="contact-item flex items-center gap-2 px-4 py-2 hover:bg-base-300 rounded-lg" data-nickname="${nickname}">
+                        <div class="avatar placeholder">
+                            <div class="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                <span>${nickname[0].toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <span>${nickname}</span>
+                    </a>
+                `;
+
+                // 添加到联系人列表
+                const contactsList = document.getElementById('contacts-list');
+                contactsList.appendChild(li);
+
+                // 清空输入框
+                input.value = '';
+
+                // 显示成功提示
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-success">
+                        <span>联系人添加成功</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+
+                // 添加点击事件监听器
+                const contactItem = li.querySelector('.contact-item');
+                contactItem.addEventListener('click', () => {
+                    switchChat('private', nickname);
+                    // 在移动端自动关闭抽屉
+                    if (window.innerWidth < 768) {
+                        document.getElementById('chat-drawer').checked = false;
+                    }
+                });
+
+                // 刷新联系人列表
+                loadActiveContacts();
+            } catch (error) {
+                console.error('Error adding contact:', error);
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-center';
+                toast.innerHTML = `
+                    <div class="alert alert-error">
+                        <span>添加联系人失败，请稍后重试</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        });
     </script>
 </body>
 </html> 

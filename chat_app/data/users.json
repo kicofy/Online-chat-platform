@@ -5,10 +5,16 @@
   },
   "harry": {
     "online": false,
-    "rooms": []
+    "rooms": [],
+    "contacts": [
+      "Harry"
+    ]
   },
   "Harry": {
     "online": false,
-    "rooms": []
+    "rooms": [],
+    "contacts": [
+      "harry"
+    ]
   }
 }

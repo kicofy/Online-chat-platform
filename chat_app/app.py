@@ -21,6 +21,10 @@ USERS_FILE = os.path.join(app.config['DATA_FOLDER'], 'users.json')
 PRIVATE_MESSAGES_FILE = os.path.join(app.config['DATA_FOLDER'], 'private_messages.json')
 GROUP_CHATS_FILE = os.path.join(app.config['DATA_FOLDER'], 'group_chats.json')
 
+# 创建必要的文件夹
+os.makedirs(app.config['DATA_FOLDER'], exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 # 用户数据存储
 def load_data():
     global users, private_messages, group_chats
@@ -69,7 +73,11 @@ def login():
     session['nickname'] = nickname
     session['language'] = language
     if nickname not in users:
-        users[nickname] = {'online': True, 'rooms': []}
+        users[nickname] = {
+            'online': True,
+            'rooms': [],
+            'contacts': []  # 添加contacts字段
+        }
         save_data()
     return redirect(url_for('chat'))
 
@@ -353,19 +361,204 @@ def get_active_contacts():
     current_user = session['nickname']
     active_contacts = set()
     
-    # 遍历所有私聊消息，找出与当前用户有过对话的用户
+    # 从联系人列表中获取联系人
+    if 'contacts' in users[current_user]:
+        active_contacts.update(users[current_user]['contacts'])
+    
+    # 从聊天记录中获取有过对话的用户
     for chat_id, messages in private_messages.items():
-        if not messages:  # 如果没有消息，跳过
-            continue
-        users = chat_id.split('_')
-        if current_user in users:
-            other_user = users[0] if users[1] == current_user else users[1]
-            active_contacts.add(other_user)
+        if messages:  # 如果有消息记录
+            users_in_chat = chat_id.split('_')
+            if current_user in users_in_chat:
+                other_user = users_in_chat[0] if users_in_chat[1] == current_user else users_in_chat[1]
+                active_contacts.add(other_user)
     
     # 将活跃联系人转换为列表并排序
     active_contacts = sorted(list(active_contacts))
     
     return jsonify({'contacts': active_contacts})
 
+@app.route('/update_group', methods=['POST'])
+def update_group():
+    if 'nickname' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    current_user = session['nickname']
+    group_name = request.json.get('group_name')
+    new_name = request.json.get('new_name')
+    action = request.json.get('action')  # rename, update_announcement, add_member, remove_member
+    
+    if group_name not in group_chats:
+        return jsonify({'error': 'Group not found'}), 404
+    
+    group = group_chats[group_name]
+    
+    # 确保 created_by 字段存在
+    if 'created_by' not in group:
+        group['created_by'] = group['members'][0] if group['members'] else current_user
+    
+    # 检查权限（只有群主和管理员可以修改）
+    if current_user != group['created_by'] and current_user not in group.get('admins', []):
+        return jsonify({'error': 'Permission denied'}), 403
+    
+    if action == 'rename' and new_name:
+        if new_name in group_chats:
+            return jsonify({'error': 'Group name already exists'}), 400
+        
+        # 重命名群组
+        group_chats[new_name] = group_chats.pop(group_name)
+        
+        # 通知所有群成员群组已更名
+        notification = {
+            'type': 'group_renamed',
+            'old_name': group_name,
+            'new_name': new_name,
+            'updated_by': current_user
+        }
+        for member in group['members']:
+            emit('group_updated', notification, room=member, namespace='/')
+        
+        save_data()  # 保存更新后的数据
+        return jsonify({'success': True, 'new_name': new_name})
+    
+    elif action == 'update_announcement':
+        announcement = request.json.get('announcement', '')
+        group['announcement'] = announcement
+        
+        # 通知所有群成员公告已更新
+        notification = {
+            'type': 'announcement_updated',
+            'group_name': group_name,
+            'announcement': announcement,
+            'updated_by': current_user
+        }
+        for member in group['members']:
+            emit('group_updated', notification, room=member, namespace='/')
+        
+        save_data()  # 保存更新后的数据
+        return jsonify({'success': True})
+    
+    elif action == 'add_member':
+        new_members = request.json.get('members', [])
+        if not isinstance(new_members, list):
+            new_members = [new_members]
+        
+        # 验证新成员是否存在
+        for member in new_members:
+            if member not in users:
+                return jsonify({'error': f'User {member} not found'}), 404
+        
+        # 添加新成员
+        for member in new_members:
+            if member not in group['members']:
+                group['members'].append(member)
+        
+        # 通知所有群成员有新成员加入
+        notification = {
+            'type': 'members_added',
+            'group_name': group_name,
+            'new_members': new_members,
+            'added_by': current_user
+        }
+        for member in group['members']:
+            emit('group_updated', notification, room=member, namespace='/')
+        
+        return jsonify({'success': True})
+    
+    elif action == 'remove_member':
+        member = request.json.get('member')
+        if member not in group['members']:
+            return jsonify({'error': 'Member not found in group'}), 404
+        
+        # 不能移除群主
+        if member == group['created_by']:
+            return jsonify({'error': 'Cannot remove group owner'}), 403
+        
+        # 移除成员
+        group['members'].remove(member)
+        
+        # 通知所有群成员
+        notification = {
+            'type': 'member_removed',
+            'group_name': group_name,
+            'removed_member': member,
+            'removed_by': current_user
+        }
+        for m in group['members']:
+            emit('group_updated', notification, room=m, namespace='/')
+        
+        # 通知被移除的成员
+        emit('group_updated', notification, room=member, namespace='/')
+        
+        return jsonify({'success': True})
+    
+    return jsonify({'error': 'Invalid action'}), 400
+
+@app.route('/get_group_info', methods=['POST'])
+def get_group_info():
+    if 'nickname' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    group_name = request.json.get('group_name')
+    if not group_name or group_name not in group_chats:
+        return jsonify({'error': 'Group not found'}), 404
+    
+    group = group_chats[group_name]
+    return jsonify({
+        'name': group_name,
+        'members': group.get('members', []),
+        'created_by': group.get('created_by', session['nickname']),  # 使用当前用户作为默认创建者
+        'created_at': group.get('created_at', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+        'announcement': group.get('announcement', ''),
+        'admins': group.get('admins', [])
+    })
+
+@app.route('/check_user_exists', methods=['POST'])
+def check_user_exists():
+    if 'nickname' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    nickname = request.json.get('nickname')
+    current_user = session['nickname']
+    
+    if not nickname:
+        return jsonify({'error': 'Nickname is required'}), 400
+    
+    exists = nickname in users
+    
+    if exists and nickname != current_user:
+        # 将新联系人添加到当前用户的联系人列表中
+        if 'contacts' not in users[current_user]:
+            users[current_user]['contacts'] = []
+        if nickname not in users[current_user]['contacts']:
+            users[current_user]['contacts'].append(nickname)
+            
+        # 将当前用户添加到新联系人的联系人列表中
+        if 'contacts' not in users[nickname]:
+            users[nickname]['contacts'] = []
+        if current_user not in users[nickname]['contacts']:
+            users[nickname]['contacts'].append(current_user)
+        
+        save_data()
+    
+    return jsonify({'exists': exists})
+
+@app.route('/search_users', methods=['POST'])
+def search_users():
+    if 'nickname' not in session:
+        return jsonify({'error': '未登录'}), 401
+    
+    query = request.json.get('query', '').strip()
+    if not query:
+        return jsonify({'users': []})
+    
+    # 搜索用户
+    matched_users = [
+        nickname for nickname in users.keys()
+        if query.lower() in nickname.lower() and nickname != session['nickname']
+    ]
+    
+    return jsonify({'users': matched_users})
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True) 
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000) 
